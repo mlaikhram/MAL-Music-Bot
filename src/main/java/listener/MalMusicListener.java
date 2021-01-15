@@ -13,8 +13,7 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.managers.AudioManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import util.HtmlUtils;
-import util.MessageUtils;
+import util.*;
 
 import javax.annotation.Nonnull;
 import java.util.*;
@@ -100,19 +99,37 @@ public class MalMusicListener extends ListenerAdapter {
                 else if (messageTokens.length >= 2 && messageTokens[1].trim().equals("play")) {
                     if (member.getVoiceState().inVoiceChannel() && guild.getVoiceChannelById(member.getVoiceState().getChannel().getIdLong()) != null) {
                         VoiceChannel currentChannel = member.getVoiceState().getChannel();
+                        CombineMethod combineMethod = CombineMethod.WEIGHTED;
+                        Set<AnimeType> animeTypes = new HashSet<>();
                         try {
+                            if (messageTokens.length >= 3) {
+                                try {
+                                    combineMethod = CombineMethod.valueOf(messageTokens[2].trim().toUpperCase());
+                                }
+                                catch (IllegalArgumentException e) {
+                                    throw new IllegalArgumentException("what is " + messageTokens[2].trim() + "? It's not any combine method I've ever heard of...", e);
+                                }
+                            }
+                            if (messageTokens.length >= 4) {
+                                int i = 3;
+                                try {
+                                    for (; i < messageTokens.length; ++i) {
+                                        animeTypes.add(AnimeType.valueOf(messageTokens[i].trim().toUpperCase()));
+                                    }
+                                }
+                                catch (IllegalArgumentException e) {
+                                    throw new IllegalArgumentException("is " + messageTokens[i].trim() + " some kind of new anime type?", e);
+                                }
+                            }
                             AudioManager audioManager = guild.getAudioManager();
                             audioManager.openAudioConnection(currentChannel);
-                            AnimeObject selectedAnime = getMusicSession(guild.getIdLong()).selectAnime(); // TODO: the rest
+                            AnimeObject selectedAnime = getMusicSession(guild.getIdLong()).selectAnime(combineMethod, animeTypes);
                             if (selectedAnime != null) {
                                 StringBuilder message = new StringBuilder();
-                                message.append("Try [" + selectedAnime.getMalId() + "] " + selectedAnime.getTitle() + "!\n");
+                                message.append("Try [" + selectedAnime.getMalId() + "] " + selectedAnime.getTitle() + " (" + selectedAnime.getType().name().toLowerCase() + ")!\n");
                                 try {
                                     Set<String> songs = HtmlUtils.getSongsFromMAL(config.getMal(), selectedAnime.getMalId());
-                                    for (String song : songs) {
-                                        message.append(song + "\n");
-                                    }
-                                    message.deleteCharAt(message.length() - 1);
+                                    message.append(YoutubeUtil.pickSong(config.getYt(), songs)); // TODO: convert song to stream for playing audio and save link + anime name to session
                                     sourceChannel.sendMessage(message.toString()).queue();
                                 }
                                 catch (Exception e) {
@@ -120,14 +137,15 @@ public class MalMusicListener extends ListenerAdapter {
                                 }
                             }
                             else {
-                                sourceChannel.sendMessage("None of these users have watched any anime...").queue();
+                                sourceChannel.sendMessage("None of these users have watched any anime..." + (animeTypes.isEmpty() ? "" : ("well not any that you're asking for, anyways..."))).queue();
                             }
                         }
                         catch (PermissionException e) {
                             sourceChannel.sendMessage("I don't have permission to join " + currentChannel.getName() + "! Rude...").queue();
                         }
                         catch (Exception e) {
-                            sourceChannel.sendMessage("I couldn't join " + currentChannel.getName() + ": " + e.getMessage()).queue();
+                            e.printStackTrace();
+                            sourceChannel.sendMessage("Something's not right..." + e.getMessage()).queue();
                         }
                     }
                     else {

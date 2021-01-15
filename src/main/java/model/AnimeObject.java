@@ -2,20 +2,21 @@ package model;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import util.AnimeType;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class AnimeObject {
 
     @JsonAlias("mal_id")
-    private String malId;
+    private long malId;
     private String title;
-    private String type;
+    private AnimeType type;
 
-    public String getMalId() {
+    public long getMalId() {
         return malId;
     }
 
-    public void setMalId(String malId) {
+    public void setMalId(long malId) {
         this.malId = malId;
     }
 
@@ -27,11 +28,11 @@ public class AnimeObject {
         this.title = title;
     }
 
-    public String getType() {
+    public AnimeType getType() {
         return type;
     }
 
-    public void setType(String type) {
+    public void setType(AnimeType type) {
         this.type = type;
     }
 }

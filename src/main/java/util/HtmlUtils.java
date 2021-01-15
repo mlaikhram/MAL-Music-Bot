@@ -19,9 +19,9 @@ public class HtmlUtils {
 
     private static final Logger logger = LoggerFactory.getLogger(HtmlUtils.class);
 
-    public static Set<String> getSongsFromMAL(String malUrl, String malId) throws IOException {
+    public static Set<String> getSongsFromMAL(String malUrl, long malId) throws IOException {
         Set<String> songs = new HashSet<>();
-        Document doc = Jsoup.parse(Jsoup.connect(malUrl.replace("{id}", malId)).execute().body());
+        Document doc = Jsoup.parse(Jsoup.connect(malUrl.replace("{id}", malId + "")).execute().body());
         logger.info("songs");
         Elements unparsedSongs = doc.getElementsByClass("theme-song");
         if (unparsedSongs.size() > 0) {
