@@ -1,12 +1,16 @@
 package listener;
 
+import audio.SessionManager;
+import com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason;
 import model.AnimeObject;
+import model.MalSong;
 import model.MalUser;
-import model.MusicSession;
+import audio.MusicSession;
 import model.YmlConfig;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceLeaveEvent;
+import net.dv8tion.jda.api.events.guild.voice.GuildVoiceUpdateEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.exceptions.PermissionException;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
@@ -23,21 +27,11 @@ public class MalMusicListener extends ListenerAdapter {
     private static final Logger logger = LoggerFactory.getLogger(MalMusicListener.class);
 
     private JDA jda;
-
-    // Used to keep track of which guilds have an active session
-    private final Map<Long, MusicSession> activeGuilds;
     private YmlConfig config;
 
     public MalMusicListener(YmlConfig config) {
-        activeGuilds = new HashMap<>();
+        SessionManager.getInstance().init(this, config);
         this.config = config;
-    }
-
-    public MusicSession getMusicSession(long guildId) {
-        if (!activeGuilds.containsKey(guildId)) {
-            activeGuilds.put(guildId, new MusicSession(config));
-        }
-        return activeGuilds.get(guildId);
     }
 
     public void setJda(JDA jda) {
@@ -71,7 +65,7 @@ public class MalMusicListener extends ListenerAdapter {
                         for (int i = 2; i < messageTokens.length; ++i) {
                             String user = messageTokens[i].trim();
                             try {
-                                getMusicSession(guild.getIdLong()).addUser(user);
+                                SessionManager.getInstance().getMusicSession(guild).addUser(user);
                                 message.append("Successfully added " + user + "!\n");
                             }
                             catch (Exception e) {
@@ -86,9 +80,28 @@ public class MalMusicListener extends ListenerAdapter {
                         sourceChannel.sendMessage("...Add who? You're gonna have to give me a MAL username (or more than one)").queue();
                     }
                 }
+                else if (messageTokens.length >= 2 && messageTokens[1].trim().equals("remove")) {
+                    if (messageTokens.length > 2) {
+                        StringBuilder message = new StringBuilder();
+                        for (int i = 2; i < messageTokens.length; ++i) {
+                            String user = messageTokens[i].trim();
+                            if (SessionManager.getInstance().getMusicSession(guild).removeUser(user)) {
+                                message.append("Successfully removed " + user + "!\n");
+                            }
+                            else {
+                                message.append("I don't even know who " + user + " is...\n");
+                            }
+                        }
+                        message.deleteCharAt(message.length() - 1);
+                        sourceChannel.sendMessage(message.toString()).queue();
+                    }
+                    else {
+                        sourceChannel.sendMessage("...Remove who? You're gonna have to give me a MAL username (or more than one)").queue();
+                    }
+                }
                 else if (messageTokens.length >= 2 && messageTokens[1].trim().equals("users")) {
                     StringBuilder message = new StringBuilder();
-                    MusicSession currentSession = getMusicSession(guild.getIdLong());
+                    MusicSession currentSession = SessionManager.getInstance().getMusicSession(guild);
                     message.append("Current MAL Users: " + currentSession.getMalUsers().size() + '\n');
                     for (MalUser user : currentSession.getMalUsers()) {
                         message.append(user.getUsername() + '\n');
@@ -97,6 +110,14 @@ public class MalMusicListener extends ListenerAdapter {
                     sourceChannel.sendMessage(message.toString()).queue();
                 }
                 else if (messageTokens.length >= 2 && messageTokens[1].trim().equals("play")) {
+                    if (SessionManager.getInstance().getMusicSession(guild).getCurrentSong() != null) {
+                        sourceChannel.sendMessage("Can't you see I'm already playing a song??").queue();
+                        return;
+                    }
+                    if (SessionManager.getInstance().getMusicSession(guild).getMalUsers().isEmpty()) {
+                        sourceChannel.sendMessage("You haven't even given me any MAL users yet!").queue();
+                        return;
+                    }
                     if (member.getVoiceState().inVoiceChannel() && guild.getVoiceChannelById(member.getVoiceState().getChannel().getIdLong()) != null) {
                         VoiceChannel currentChannel = member.getVoiceState().getChannel();
                         CombineMethod combineMethod = CombineMethod.WEIGHTED;
@@ -122,22 +143,33 @@ public class MalMusicListener extends ListenerAdapter {
                                 }
                             }
                             AudioManager audioManager = guild.getAudioManager();
-                            audioManager.openAudioConnection(currentChannel);
-                            AnimeObject selectedAnime = getMusicSession(guild.getIdLong()).selectAnime(combineMethod, animeTypes);
-                            if (selectedAnime != null) {
-                                StringBuilder message = new StringBuilder();
-                                message.append("Try [" + selectedAnime.getMalId() + "] " + selectedAnime.getTitle() + " (" + selectedAnime.getType().name().toLowerCase() + ")!\n");
-                                try {
-                                    Set<String> songs = HtmlUtils.getSongsFromMAL(config.getMal(), selectedAnime.getMalId());
-                                    message.append(YoutubeUtil.pickSong(config.getYt(), songs)); // TODO: convert song to stream for playing audio and save link + anime name to session
-                                    sourceChannel.sendMessage(message.toString()).queue();
-                                }
-                                catch (Exception e) {
-                                    e.printStackTrace();
-                                }
+                            if (!audioManager.isConnected()) {
+                                audioManager.openAudioConnection(currentChannel);
                             }
-                            else {
-                                sourceChannel.sendMessage("None of these users have watched any anime..." + (animeTypes.isEmpty() ? "" : ("well not any that you're asking for, anyways..."))).queue();
+                            else if (audioManager.getConnectedChannel().getIdLong() != currentChannel.getIdLong()) {
+                                throw new Exception("you're not in the same voice channel as me!");
+                            }
+                            try {
+                                AnimeObject selectedAnime = null;
+                                Set<String> songs = new HashSet<>();
+                                while (songs.isEmpty()) {
+                                    selectedAnime = SessionManager.getInstance().getMusicSession(guild).selectAnime(combineMethod, animeTypes);
+                                    if (selectedAnime != null) {
+                                        songs = HtmlUtils.getSongsFromMAL(config.getMal(), selectedAnime.getMalId());
+                                    }
+                                    else {
+                                        sourceChannel.sendMessage("None of these users have watched any anime..." + (animeTypes.isEmpty() ? "" : ("well not any that you're asking for, anyways..."))).queue();
+                                        return;
+                                    }
+                                }
+                                String songUrl = YoutubeUtil.pickSong(config.getYt(), songs);
+                                SessionManager.getInstance().loadAndPlay(guild, sourceChannel, songUrl);
+                                logger.info("Now Playing: " + songUrl);
+                                SessionManager.getInstance().getMusicSession(guild).setCurrentSong(new MalSong(selectedAnime, songUrl, sourceChannel.getIdLong()));
+                            }
+                            catch (Exception e) {
+                                e.printStackTrace();
+                                sourceChannel.sendMessage("What's wrong with my music player? Oh, " + e.getMessage()).queue();
                             }
                         }
                         catch (PermissionException e) {
@@ -152,8 +184,20 @@ public class MalMusicListener extends ListenerAdapter {
                         sourceChannel.sendMessage("How can we play if you're not in a voice channel?").queue();
                     }
                 }
-                else if (messageTokens.length >= 2 && messageTokens[1].trim().equals("end")) {
-
+                else if (messageTokens.length >= 2 && messageTokens[1].trim().equals("stop")) {
+                    MusicSession musicSession = SessionManager.getInstance().getMusicSession(guild);
+                    MalSong currentSong = musicSession.getCurrentSong();
+                    if (currentSong != null) {
+                        if (!member.getVoiceState().inVoiceChannel() || member.getVoiceState().getChannel().getIdLong() != guild.getAudioManager().getConnectedChannel().getIdLong()) {
+                            sourceChannel.sendMessage("You can't tell me to stop! You're not even in this voice channel!").queue();
+                        }
+                        else {
+                            musicSession.scheduler.stopTrack();
+                        }
+                    }
+                    else {
+                        sourceChannel.sendMessage("I'm not even playing a song right now!").queue();
+                    }
                 }
                 else {
                     logger.error("unknown command");
@@ -169,15 +213,33 @@ public class MalMusicListener extends ListenerAdapter {
         }
     }
 
+    public void songEnded(long guildId, AudioTrackEndReason endReason) {
+        Guild guild = jda.getGuildById(guildId);
+        MusicSession musicSession = SessionManager.getInstance().getMusicSession(guild);
+        MalSong lastSong = musicSession.getCurrentSong();
+        guild.getTextChannelById(lastSong.getPlayedFromMessageChannelId()).sendMessage(MessageUtils.getSongEndMessage(endReason) + " The song was from " + lastSong.getAnime().getTitle() + " in case you were wondering\n" + lastSong.getUrl()).queue();
+        musicSession.setCurrentSong(null);
+    }
+
     @Override
     public void onGuildVoiceLeave(@Nonnull GuildVoiceLeaveEvent event) {
-        VoiceChannel eventChannel = event.getChannelLeft();
-        if (eventChannel.getMembers().stream().anyMatch((member) -> member.getIdLong() == jda.getSelfUser().getIdLong()) && eventChannel.getMembers().size() == 1) {
+        checkIfAlone(event.getChannelLeft(), event.getMember());
+    }
+
+    @Override
+    public void onGuildVoiceUpdate(@Nonnull GuildVoiceUpdateEvent event) {
+        if (event.getChannelLeft() != null) {
+            checkIfAlone(event.getChannelLeft(), event.getEntity());
+        }
+    }
+
+    private void checkIfAlone(VoiceChannel leftChannel, Member leftMember) {
+        if (leftChannel.getMembers().stream().anyMatch((member) -> member.getIdLong() == jda.getSelfUser().getIdLong()) && leftChannel.getMembers().size() == 1) {
             logger.info("I'm the only one here...");
-            event.getMember().getUser().openPrivateChannel().queue((channel) -> {
+            leftMember.getUser().openPrivateChannel().queue((channel) -> {
                 channel.sendMessage("You left me alone in the voice channel!").queue();
             });
-            event.getGuild().getAudioManager().closeAudioConnection();
+            leftChannel.getGuild().getAudioManager().closeAudioConnection();
         }
     }
 }

@@ -1,5 +1,7 @@
 package util;
 
+import com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.regex.Matcher;
@@ -29,6 +31,19 @@ public class MessageUtils {
             matches.add(mentionToUserID(m.group()));
         }
         return matches;
+    }
+
+    public static String getSongEndMessage(AudioTrackEndReason endReason) {
+        switch (endReason) {
+            case FINISHED:
+                return "That's the end of the song!";
+
+            case STOPPED:
+                return "Fine I'll end it...";
+
+            default:
+                return "Uhh...not sure what happened there...";
+        }
     }
 
     public static final String HELP_TEXT =
