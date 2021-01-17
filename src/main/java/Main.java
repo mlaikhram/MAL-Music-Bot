@@ -10,7 +10,7 @@ import javax.security.auth.login.LoginException;
 import java.io.File;
 import java.io.IOException;
 
-public class Main{
+public class Main { // TODO: update readme
 
     public static void main(String[] args) throws LoginException, IOException, InterruptedException {
         File file = new File("bot.yml");
@@ -19,7 +19,7 @@ public class Main{
         MalMusicListener malMusicListener = new MalMusicListener(config);
         JDA jda = JDABuilder.createDefault(config.getToken())
                 .addEventListeners(malMusicListener)
-                .setActivity(Activity.watching("for task emotes"))
+                .setActivity(Activity.listening("music"))
                 .build();
         malMusicListener.setJda(jda);
         jda.awaitReady();

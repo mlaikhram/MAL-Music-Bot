@@ -29,15 +29,10 @@ public class MalUser implements Comparable<MalUser> {
 
     public void populate(List<String> jikanUrls) {
         RestTemplate template = new RestTemplate();
+        logger.info("populating " + username + "'s list");
         for (String url : jikanUrls) {
             ResponseEntity<JikanResponse> response = template.getForEntity(url, JikanResponse.class, Collections.singletonMap("user", username));
             animeList.addAll(response.getBody().getAnime());
-//            for (int i = 0; i < 5; ++i) {
-//                if (i >= response.getBody().getAnime().size()) {
-//                    break;
-//                }
-//                logger.info(response.getBody().getAnime().get(i).getMalId() + ": " + response.getBody().getAnime().get(i).getTitle());
-//            }
         }
     }
 

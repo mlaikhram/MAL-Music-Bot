@@ -51,8 +51,8 @@ public class MusicSession {
         }
         else {
             try {
-                newUser.populate(config.getJikan());
                 malUsers.add(newUser);
+                newUser.populate(config.getJikan());
             }
             catch (Exception e) {
                 throw new Exception("could not find " + username + "'s list on MAL", e);
