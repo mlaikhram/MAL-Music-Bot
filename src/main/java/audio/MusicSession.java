@@ -28,6 +28,7 @@ public class MusicSession {
     private final LinkedHashSet<Long> recentAnime;
 
     private MalSong currentSong;
+    private String lastCommand;
 
     public final AudioPlayer audioPlayer;
     public final TrackScheduler scheduler;
@@ -73,7 +74,7 @@ public class MusicSession {
         if (collection.size() > 0) {
             AnimeObject nextAnime = collection.get(new Random().nextInt(collection.size()));
             recentAnime.add(nextAnime.getMalId());
-            if (recentAnime.size() > MAX_RECENT_ANIME) {
+            if (recentAnime.size() > MAX_RECENT_ANIME) {        // TODO: something's not working right here (getting duplicate shows often-ish)
                 Iterator<Long> itr = recentAnime.iterator();
                 long lastId = -1;
                 while (itr.hasNext()) {
@@ -93,8 +94,46 @@ public class MusicSession {
         }
     }
 
-    private Stream<AnimeObject> getCombinedList(CombineMethod combineMethod) { // TODO: implement other combine methods
+    private Stream<AnimeObject> getCombinedList(CombineMethod combineMethod) {
         switch (combineMethod) {
+            case UNIFORM:
+                return malUsers.stream().map((user) -> user.getAnimeList()).flatMap(Set::stream).collect(Collectors.toSet()).stream();
+
+            case BALANCED:
+                int selectedUserIndex = new Random().nextInt(malUsers.size());
+                int i = 0;
+                for (MalUser malUser : malUsers) {
+                    if (i == selectedUserIndex) {
+                        return malUser.getAnimeList().stream();
+                    }
+                    ++i;
+                }
+
+            case OVERLAP:
+                List<AnimeObject> woAnimeList = new LinkedList<>();
+                for (MalUser malUser : malUsers) {
+                    for (AnimeObject anime : malUser.getAnimeList()) {
+                        if (malUsers.stream().filter((otherUser) -> !otherUser.getUsername().equals(malUser.getUsername())).anyMatch((otherUser) -> otherUser.getAnimeList().contains(anime))) {
+                            woAnimeList.add(anime);
+                        }
+                    }
+                }
+                return woAnimeList.stream();
+
+            case INTERSECT:
+                Set<AnimeObject> soAnimeList = null;
+                for (MalUser malUser : malUsers) {
+                    if (soAnimeList == null) {
+                        soAnimeList = new HashSet<>(malUser.getAnimeList());
+                    }
+                    else {
+                        soAnimeList.retainAll(malUser.getAnimeList());
+                    }
+
+                }
+                return soAnimeList.stream();
+
+            case WEIGHTED:
             default:
                 return malUsers.stream().map((user) -> user.getAnimeList()).flatMap(Set::stream);
         }
@@ -114,5 +153,13 @@ public class MusicSession {
 
     public void setCurrentSong(MalSong song) {
         this.currentSong = song;
+    }
+
+    public String getLastCommand() {
+        return lastCommand;
+    }
+
+    public void setLastCommand(String lastCommand) {
+        this.lastCommand = lastCommand;
     }
 }

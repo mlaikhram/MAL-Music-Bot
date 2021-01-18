@@ -47,5 +47,5 @@ public class MessageUtils {
     }
 
     public static final String HELP_TEXT =
-            "I'll tell you later";
+            "I'll tell you later"; // TODO: add help text
 }

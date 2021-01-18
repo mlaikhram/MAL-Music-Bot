@@ -17,6 +17,8 @@ import net.dv8tion.jda.api.managers.AudioManager;
 import org.jsoup.nodes.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.client.HttpClientErrorException;
 import util.*;
 
 import javax.annotation.Nonnull;
@@ -55,9 +57,21 @@ public class MalMusicListener extends ListenerAdapter {
             messageTokens[i] = messageTokens[i].toLowerCase();
         }
 
+        boolean isAgain = false;
+
         if (event.isFromType(ChannelType.TEXT)) {
             if (MessageUtils.isUserMention(messageTokens[0]) && MessageUtils.mentionToUserID(messageTokens[0]).toString().equals(myID)) {
                 logger.info("message received from " + author + ": " + rawMessage);
+                if (messageTokens.length >= 2 && messageTokens[1].equals("again")) {
+                    isAgain = true;
+                    messageTokens = SessionManager.getInstance().getMusicSession(guild).getLastCommand().split("[ ]+");
+                    for (int i = 1; i < messageTokens.length; ++i) {
+                        messageTokens[i] = messageTokens[i].toLowerCase();
+                    }
+                }
+                else {
+                    SessionManager.getInstance().getMusicSession(guild).setLastCommand(rawMessage);
+                }
 
                 if (messageTokens.length <= 1 || (messageTokens.length >= 2 && messageTokens[1].equals("help"))) {
                     sourceChannel.sendMessage(MessageUtils.HELP_TEXT).queue();
@@ -113,7 +127,7 @@ public class MalMusicListener extends ListenerAdapter {
                     sourceChannel.sendMessage(message.toString()).queue();
                 }
                 else if (messageTokens.length >= 2 && messageTokens[1].equals("play")) {
-                    if (SessionManager.getInstance().getMusicSession(guild).getCurrentSong() != null) {
+                    if (SessionManager.getInstance().getMusicSession(guild).getCurrentSong() != null && !isAgain) {
                         sourceChannel.sendMessage("Can't you see I'm already playing a song??").queue();
                         return;
                     }
@@ -128,10 +142,10 @@ public class MalMusicListener extends ListenerAdapter {
                         try {
                             if (messageTokens.length >= 3) {
                                 try {
-                                    combineMethod = CombineMethod.valueOf(messageTokens[2].toUpperCase());
+                                    combineMethod = CombineMethod.fromInt(Integer.parseInt(messageTokens[2]));
                                 }
-                                catch (IllegalArgumentException e) {
-                                    throw new IllegalArgumentException("what is " + messageTokens[2] + "? It's not any combine method I've ever heard of...", e);
+                                catch (Exception e) {
+                                    throw new IllegalArgumentException("what is " + messageTokens[2] + "? I need a number from 0 to " + CombineMethod.values().length + "...", e);
                                 }
                             }
                             if (messageTokens.length >= 4) {
@@ -166,14 +180,27 @@ public class MalMusicListener extends ListenerAdapter {
                                         }
                                     }
                                     else if (selectedAnime == null) {
-                                        sourceChannel.sendMessage("None of these users have watched any anime..." + (animeTypes.isEmpty() ? "" : ("well not any that you're asking for, anyways..."))).queue();
+                                        sourceChannel.sendMessage("None of these users have watched any anime..." + (animeTypes.isEmpty() ? "" : ("well not any with your restrictions, anyways..."))).queue();
                                         return;
                                     }
                                 }
-                                String songUrl = YoutubeUtil.pickSong(config.getYt(), selectedAnime);
-                                SessionManager.getInstance().loadAndPlay(guild, sourceChannel, songUrl);
-                                logger.info("Now Playing: " + songUrl);
-                                SessionManager.getInstance().getMusicSession(guild).setCurrentSong(new MalSong(selectedAnime, songUrl, sourceChannel.getIdLong()));
+                                if (isAgain && SessionManager.getInstance().getMusicSession(guild).getCurrentSong() != null) {
+                                    SessionManager.getInstance().getMusicSession(guild).scheduler.stopTrack();
+                                }
+                                try {
+                                    String songUrl = YoutubeUtil.pickSong(config.getYt(), selectedAnime);
+                                    SessionManager.getInstance().loadAndPlay(guild, sourceChannel, songUrl);
+                                    logger.info("Now Playing: " + songUrl);
+                                    SessionManager.getInstance().getMusicSession(guild).setCurrentSong(new MalSong(selectedAnime, songUrl, sourceChannel.getIdLong()));
+                                }
+                                catch (HttpClientErrorException e) {
+                                    if (e.getStatusCode() == HttpStatus.FORBIDDEN) {
+                                        throw new Exception("Youtube is not letting me search for any more videos...", e);
+                                    }
+                                    else {
+                                        throw e;
+                                    }
+                                }
                             }
                             catch (Exception e) {
                                 e.printStackTrace();
