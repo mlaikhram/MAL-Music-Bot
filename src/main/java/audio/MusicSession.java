@@ -74,13 +74,11 @@ public class MusicSession {
         if (collection.size() > 0) {
             AnimeObject nextAnime = collection.get(new Random().nextInt(collection.size()));
             recentAnime.add(nextAnime.getMalId());
-            if (recentAnime.size() > MAX_RECENT_ANIME) {        // TODO: something's not working right here (getting duplicate shows often-ish)
+            if (recentAnime.size() > MAX_RECENT_ANIME) {
                 Iterator<Long> itr = recentAnime.iterator();
-                long lastId = -1;
-                while (itr.hasNext()) {
-                    lastId = itr.next();
+                if (itr.hasNext()) {
+                    recentAnime.remove(itr.next());
                 }
-                recentAnime.remove(lastId);
             }
             return nextAnime;
         }

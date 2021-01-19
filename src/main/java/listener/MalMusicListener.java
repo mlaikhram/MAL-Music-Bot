@@ -76,6 +76,18 @@ public class MalMusicListener extends ListenerAdapter {
                 if (messageTokens.length <= 1 || (messageTokens.length >= 2 && messageTokens[1].equals("help"))) {
                     sourceChannel.sendMessage(MessageUtils.HELP_TEXT).queue();
                 }
+                else if (messageTokens.length >= 3 && messageTokens[1].equals("combine") && messageTokens[2].equals("methods")) {
+                    sourceChannel.sendMessage(CombineMethod.getInfoText()).queue();
+                }
+                else if (messageTokens.length >= 2 && messageTokens[1].equals("types")) {
+                    StringBuilder message = new StringBuilder();
+                    message.append("Here's all of the anime types I know:\n\n");
+                    for (AnimeType animeType : AnimeType.values()) {
+                        message.append('`' + animeType.name() + "`\n");
+                    }
+                    message.deleteCharAt(message.length() - 1);
+                    sourceChannel.sendMessage(message.toString()).queue();
+                }
                 else if (messageTokens.length >= 2 && messageTokens[1].equals("add")) {
                     if (messageTokens.length > 2) {
                         StringBuilder message = new StringBuilder();
@@ -119,7 +131,7 @@ public class MalMusicListener extends ListenerAdapter {
                 else if (messageTokens.length >= 2 && messageTokens[1].equals("users")) {
                     StringBuilder message = new StringBuilder();
                     MusicSession currentSession = SessionManager.getInstance().getMusicSession(guild);
-                    message.append("Current MAL Users: " + currentSession.getMalUsers().size() + '\n');
+                    message.append("Current MAL Users (" + currentSession.getMalUsers().size() + "): \n");
                     for (MalUser user : currentSession.getMalUsers()) {
                         message.append(user.getUsername() + '\n');
                     }
@@ -145,7 +157,7 @@ public class MalMusicListener extends ListenerAdapter {
                                     combineMethod = CombineMethod.fromInt(Integer.parseInt(messageTokens[2]));
                                 }
                                 catch (Exception e) {
-                                    throw new IllegalArgumentException("what is " + messageTokens[2] + "? I need a number from 0 to " + CombineMethod.values().length + "...", e);
+                                    throw new IllegalArgumentException("what is " + messageTokens[2] + "? I need a number from 0 to " + (CombineMethod.values().length - 1) + "...", e);
                                 }
                             }
                             if (messageTokens.length >= 4) {
@@ -270,6 +282,9 @@ public class MalMusicListener extends ListenerAdapter {
                 channel.sendMessage("You left me alone in the voice channel!").queue();
             });
             leftChannel.getGuild().getAudioManager().closeAudioConnection();
+            if (SessionManager.getInstance().getMusicSession(leftChannel.getGuild()).getCurrentSong() != null) {
+                SessionManager.getInstance().getMusicSession(leftChannel.getGuild()).scheduler.stopTrack();
+            }
         }
     }
 }

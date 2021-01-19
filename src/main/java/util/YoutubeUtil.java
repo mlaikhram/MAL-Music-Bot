@@ -72,6 +72,7 @@ public class YoutubeUtil {
             "remix",
             "mix",
             "nightcore",
+            "synthesia",
             "amv",
             "piano",
             "guitar",
@@ -81,7 +82,8 @@ public class YoutubeUtil {
             "instrumental",
             "pv",
             "preview",
-            "trailer"
+            "trailer",
+            "live"
     };
 
     private static final String[] softFilters = {

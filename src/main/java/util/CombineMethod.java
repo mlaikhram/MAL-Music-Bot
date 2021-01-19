@@ -23,4 +23,23 @@ public enum CombineMethod {
             return CombineMethod.WEIGHTED;
         return type;
     }
+
+    public static String getInfoText() {
+        return "Here's all of the combine methods I know:\n" +
+                "\n" +
+                "`0 (UNIFORM)`\n" +
+                "Each anime gets represented equally\n" +
+                "\n" +
+                "`1 (BALANCED)`\n" +
+                "Each user gets represented equally\n" +
+                "\n" +
+                "`2 (OVERLAP)`\n" +
+                "Only include anime that at least 2 users have watched, with increased weight for anime watched by more users\n" +
+                "\n" +
+                "`3 (INTERSECT)`\n" +
+                "Only include anime that all users have watched\n" +
+                "\n" +
+                "`4 (WEIGHTED)`\n" +
+                "Anime that has been watched by more users will be more likely to be selected [Default Option]";
+    }
 }
