@@ -26,4 +26,36 @@ java -jar mal-music-bot-1.0-SNAPSHOT.jar
 Once the Bot is running, you can invite it to your Discord Server from the [Discord Developer Portal](https://discord.com/developers/applications) and interact with it from your text channels.
 
 ### Usage
-TODO
+Tag the bot or type !iwa and send one of the following messages into a text channel to use the bot:
+
+`add <mal username> ...`
+
+Add a user (or users) to the list of anime to choose from
+
+`remove <mal username> ...`
+
+Remove a user (or users) from the list of anime to choose from
+
+`users`
+
+List all users that are currently added to the list
+
+`play [combine method id] [anime type] ...`
+
+Play a song from the current list of users, combining with the specified combine method (optional) and only selecting from the listed anime types (optional)
+
+`stop`
+
+Stop the song that is currently playing
+
+`methods`
+
+List all combine methods
+
+`types`
+
+List all anime types
+
+`again`
+
+Repeat the last action

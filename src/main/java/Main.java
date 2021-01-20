@@ -9,7 +9,7 @@ import util.DBUtils;
 
 import java.io.File;
 
-public class Main { // TODO: update readme
+public class Main {
 
     public static void main(String[] args) throws Exception {
         File file = new File("bot.yml");

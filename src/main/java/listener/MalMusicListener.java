@@ -60,7 +60,7 @@ public class MalMusicListener extends ListenerAdapter {
         boolean isAgain = false;
 
         if (event.isFromType(ChannelType.TEXT)) {
-            if (MessageUtils.isUserMention(messageTokens[0]) && MessageUtils.mentionToUserID(messageTokens[0]).toString().equals(myID)) {
+            if ((MessageUtils.isUserMention(messageTokens[0]) && MessageUtils.mentionToUserID(messageTokens[0]).toString().equals(myID)) || messageTokens[0].toLowerCase().equals(MessageUtils.COMMAND_PROMPT)) {
                 logger.info("message received from " + author + ": " + rawMessage);
                 if (messageTokens.length >= 2 && messageTokens[1].equals("again")) {
                     isAgain = true;
@@ -76,7 +76,7 @@ public class MalMusicListener extends ListenerAdapter {
                 if (messageTokens.length <= 1 || (messageTokens.length >= 2 && messageTokens[1].equals("help"))) {
                     sourceChannel.sendMessage(MessageUtils.HELP_TEXT).queue();
                 }
-                else if (messageTokens.length >= 3 && messageTokens[1].equals("combine") && messageTokens[2].equals("methods")) {
+                else if (messageTokens.length >= 2 && messageTokens[1].equals("methods")) {
                     sourceChannel.sendMessage(CombineMethod.getInfoText()).queue();
                 }
                 else if (messageTokens.length >= 2 && messageTokens[1].equals("types")) {

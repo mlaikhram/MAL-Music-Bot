@@ -46,8 +46,9 @@ public class MessageUtils {
         }
     }
 
+    public static final String COMMAND_PROMPT = "!iwa";
     public static final String HELP_TEXT =
-        "Tag me and send one of the following messages:\n" +
+        "Tag me or type `" + COMMAND_PROMPT + "` and send one of the following messages:\n" +
         "\n" +
         "`add <mal username> ...`\n" +
         "Add a user (or users) to the list of anime to choose from\n" +
@@ -64,7 +65,7 @@ public class MessageUtils {
         "`stop`\n" +
         "Stop the song that I'm currently playing\n" +
         "\n" +
-        "`combine methods`\n" +
+        "`methods`\n" +
         "List all of the combine methods I know\n" +
         "\n" +
         "`types`\n" +
