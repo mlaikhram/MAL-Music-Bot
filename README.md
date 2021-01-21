@@ -58,4 +58,4 @@ List all anime types
 
 `again`
 
-Repeat the last action
+Repeat the last play command

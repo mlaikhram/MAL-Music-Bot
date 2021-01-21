@@ -1,6 +1,7 @@
 package util;
 
 import model.AnimeObject;
+import model.MalSong;
 import model.YoutubeResponse;
 import model.YoutubeVideo;
 import org.slf4j.Logger;
@@ -20,7 +21,7 @@ public class YoutubeUtil {
     private static final String VIDEO_URL = "https://www.youtube.com/watch?v={id}";
     private static final String EMPTY_SEARCH = "[no results]";
 
-    public static String pickSong(String url, AnimeObject anime) throws Exception {
+    public static MalSong pickSong(long channelId, String url, AnimeObject anime) throws Exception {
         String song = (String)anime.getSongs().toArray()[new Random().nextInt(anime.getSongs().size())];
         String ytid = DBUtils.getSongId(song);
         if (ytid == null) {
@@ -39,7 +40,7 @@ public class YoutubeUtil {
         else if (ytid.equals(EMPTY_SEARCH)) {
             throw new Exception("I couldn't find any songs for " + anime.getEnglishTitle());
         }
-        return VIDEO_URL.replace("{id}", ytid);
+        return new MalSong(song, anime, VIDEO_URL.replace("{id}", ytid), channelId);
     }
 
     private static YoutubeVideo filterResults(AnimeObject anime, List<YoutubeVideo> videos) throws Exception {

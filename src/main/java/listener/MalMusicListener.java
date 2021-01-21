@@ -62,15 +62,12 @@ public class MalMusicListener extends ListenerAdapter {
         if (event.isFromType(ChannelType.TEXT)) {
             if ((MessageUtils.isUserMention(messageTokens[0]) && MessageUtils.mentionToUserID(messageTokens[0]).toString().equals(myID)) || messageTokens[0].toLowerCase().equals(MessageUtils.COMMAND_PROMPT)) {
                 logger.info("message received from " + author + ": " + rawMessage);
-                if (messageTokens.length >= 2 && messageTokens[1].equals("again")) {
+                if (messageTokens.length >= 2 && messageTokens[1].equals("again") && SessionManager.getInstance().getMusicSession(guild).getLastCommand() != null) {
                     isAgain = true;
                     messageTokens = SessionManager.getInstance().getMusicSession(guild).getLastCommand().split("[ ]+");
                     for (int i = 1; i < messageTokens.length; ++i) {
                         messageTokens[i] = messageTokens[i].toLowerCase();
                     }
-                }
-                else {
-                    SessionManager.getInstance().getMusicSession(guild).setLastCommand(rawMessage);
                 }
 
                 if (messageTokens.length <= 1 || (messageTokens.length >= 2 && messageTokens[1].equals("help"))) {
@@ -199,11 +196,14 @@ public class MalMusicListener extends ListenerAdapter {
                                 if (isAgain && SessionManager.getInstance().getMusicSession(guild).getCurrentSong() != null) {
                                     SessionManager.getInstance().getMusicSession(guild).scheduler.stopTrack();
                                 }
+                                else if (!isAgain) {
+                                    SessionManager.getInstance().getMusicSession(guild).setLastCommand(rawMessage);
+                                }
                                 try {
-                                    String songUrl = YoutubeUtil.pickSong(config.getYt(), selectedAnime);
-                                    SessionManager.getInstance().loadAndPlay(guild, sourceChannel, songUrl);
-                                    logger.info("Now Playing: " + songUrl);
-                                    SessionManager.getInstance().getMusicSession(guild).setCurrentSong(new MalSong(selectedAnime, songUrl, sourceChannel.getIdLong()));
+                                    MalSong song = YoutubeUtil.pickSong(sourceChannel.getIdLong(), config.getYt(), selectedAnime);
+                                    SessionManager.getInstance().loadAndPlay(guild, sourceChannel, song.getUrl());
+                                    logger.info("Now Playing: " + song.getUrl());
+                                    SessionManager.getInstance().getMusicSession(guild).setCurrentSong(song);
                                 }
                                 catch (HttpClientErrorException e) {
                                     if (e.getStatusCode() == HttpStatus.FORBIDDEN) {
@@ -264,7 +264,7 @@ public class MalMusicListener extends ListenerAdapter {
         Guild guild = jda.getGuildById(guildId);
         MusicSession musicSession = SessionManager.getInstance().getMusicSession(guild);
         MalSong lastSong = musicSession.getCurrentSong();
-        guild.getTextChannelById(lastSong.getPlayedFromMessageChannelId()).sendMessage(MessageUtils.getSongEndMessage(endReason) + " The song was from " + lastSong.getAnime().getEnglishTitle() + (lastSong.getAnime().getTitle().equals(lastSong.getAnime().getEnglishTitle()) ? "" : (" (" + lastSong.getAnime().getTitle() + ")")) + " in case you were wondering\n" + lastSong.getUrl()).queue();
+        guild.getTextChannelById(lastSong.getPlayedFromMessageChannelId()).sendMessage(MessageUtils.getSongEndMessage(endReason) + " The song was `" + lastSong.getName() +  "` from " + lastSong.getAnime().getEnglishTitle() + (lastSong.getAnime().getTitle().equals(lastSong.getAnime().getEnglishTitle()) ? "`" : (" (" + lastSong.getAnime().getTitle() + ")")) + " in case you were wondering\n" + lastSong.getUrl()).queue();
         musicSession.setCurrentSong(null);
     }
 

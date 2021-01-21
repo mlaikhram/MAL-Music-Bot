@@ -72,5 +72,5 @@ public class MessageUtils {
         "List all of the anime types I know\n" +
         "\n" +
         "`again`\n" +
-        "Repeat the last action I took";
+        "Repeat the last play command";
 }
