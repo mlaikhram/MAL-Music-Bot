@@ -56,4 +56,9 @@ public class MalUser implements Comparable<MalUser> {
     public int compareTo(@NotNull MalUser o) {
         return username.toLowerCase().compareTo(o.username.toLowerCase());
     }
+
+    @Override
+    public int hashCode() {
+        return username.toLowerCase().hashCode();
+    }
 }

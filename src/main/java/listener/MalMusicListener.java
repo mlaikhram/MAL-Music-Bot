@@ -185,7 +185,12 @@ public class MalMusicListener extends ListenerAdapter {
                                             selectedAnime.setEnglishTitle(HtmlUtils.getEnglishTitleFromMAL(malPage, selectedAnime.getTitle()));
                                         }
                                         if (selectedAnime.getSongs() == null) {
+                                            logger.info("anime name: " + selectedAnime.getEnglishTitle());
                                             selectedAnime.setSongs(HtmlUtils.getSongsFromMAL(malPage));
+                                            logger.info("post add");
+                                            for (String malSong : selectedAnime.getSongs()) {
+                                                logger.info(malSong);
+                                            }
                                         }
                                     }
                                     else if (selectedAnime == null) {
@@ -264,7 +269,7 @@ public class MalMusicListener extends ListenerAdapter {
         Guild guild = jda.getGuildById(guildId);
         MusicSession musicSession = SessionManager.getInstance().getMusicSession(guild);
         MalSong lastSong = musicSession.getCurrentSong();
-        guild.getTextChannelById(lastSong.getPlayedFromMessageChannelId()).sendMessage(MessageUtils.getSongEndMessage(endReason) + " The song was `" + lastSong.getName() +  "` from " + lastSong.getAnime().getEnglishTitle() + (lastSong.getAnime().getTitle().equals(lastSong.getAnime().getEnglishTitle()) ? "`" : (" (" + lastSong.getAnime().getTitle() + ")")) + " in case you were wondering\n" + lastSong.getUrl()).queue();
+        guild.getTextChannelById(lastSong.getPlayedFromMessageChannelId()).sendMessage(MessageUtils.getSongEndMessage(endReason) + " The song was `" + lastSong.getName() +  "` from " + lastSong.getAnime().getEnglishTitle() + (lastSong.getAnime().getTitle().equals(lastSong.getAnime().getEnglishTitle()) ? "" : (" (" + lastSong.getAnime().getTitle() + ")")) + " in case you were wondering\n" + lastSong.getUrl()).queue();
         musicSession.setCurrentSong(null);
     }
 

@@ -127,7 +127,6 @@ public class MusicSession {
                     else {
                         soAnimeList.retainAll(malUser.getAnimeList());
                     }
-
                 }
                 return soAnimeList.stream();
 

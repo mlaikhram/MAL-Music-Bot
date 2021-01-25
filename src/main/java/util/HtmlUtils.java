@@ -16,7 +16,7 @@ import java.util.regex.Pattern;
 
 public class HtmlUtils {
 
-//    private static final Logger logger = LoggerFactory.getLogger(HtmlUtils.class);
+    private static final Logger logger = LoggerFactory.getLogger(HtmlUtils.class);
 
     public static Document getMALPage(String malUrl, long malId) throws IOException {
         return Jsoup.parse(Jsoup.connect(malUrl.replace("{id}", malId + "")).execute().body());
@@ -44,21 +44,13 @@ public class HtmlUtils {
         Set<String> songs = new HashSet<>();
         Elements unparsedSongs = doc.getElementsByClass("theme-song");
         if (unparsedSongs.size() > 0) {
-//            Pattern regexWithEpisodes = Pattern.compile("(#[0-9]+: )?(\".+\" by .+)( \\(ep[s]? ([0-9]+(\\-[0-9]+)?(, )?)+\\))");
-//            Pattern regexWithoutEpisodes = Pattern.compile("(#[0-9]+: )?(\".+\" by .+)");
-            Pattern regexWithEpisodes = Pattern.compile("(#[0-9]+: )?\"(.+)( \\(.+\\))\" by .+( \\(ep[s]? ([0-9]+(\\-[0-9]+)?(, )?)+\\))"); // excludes japanese song name and artist name to (hopefully) refine search
-            Pattern regexWithoutEpisodes = Pattern.compile("(#[0-9]+: )?\"(.+)( \\(.+\\))\" by .+");
+            Pattern regexWithEpisodes = Pattern.compile("(#[0-9]+: )?\"(.+?)( \\(.+\\))?\" by .+( \\(ep[s]? ([0-9]+(\\-[0-9]+)?(, )?)+\\))?"); // excludes japanese song name and artist name to (hopefully) refine search
+            logger.info("songs:");
             for (Element song : unparsedSongs) {
-//                logger.info(song.html());
+                logger.info(song.html());
                 Matcher matcher = regexWithEpisodes.matcher(song.html());
                 if (matcher.matches()) {
                     songs.add(matcher.group(2).replace("\"", ""));
-                }
-                else {
-                    matcher = regexWithoutEpisodes.matcher(song.html());
-                    if (matcher.matches()) {
-                        songs.add(matcher.group(2).replace("\"", ""));
-                    }
                 }
             }
         }

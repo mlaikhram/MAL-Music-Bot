@@ -2,12 +2,13 @@ package model;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import org.jetbrains.annotations.NotNull;
 import util.AnimeType;
 
 import java.util.Set;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class AnimeObject {
+public class AnimeObject implements Comparable<AnimeObject> {
 
     @JsonAlias("mal_id")
     private long malId;
@@ -54,5 +55,27 @@ public class AnimeObject {
 
     public void setType(AnimeType type) {
         this.type = type;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == this) {
+            return true;
+        }
+        if (!(o instanceof AnimeObject)) {
+            return false;
+        }
+        AnimeObject c = (AnimeObject) o;
+        return malId == c.malId;
+    }
+
+    @Override
+    public int compareTo(@NotNull AnimeObject o) {
+        return Long.compare(malId, o.malId);
+    }
+
+    @Override
+    public int hashCode() {
+        return Long.hashCode(malId);
     }
 }

@@ -74,7 +74,9 @@ public class YoutubeUtil {
             "mix",
             "nightcore",
             "synthesia",
+            "montage",
             "amv",
+            "pmv",
             "piano",
             "guitar",
             "music box",
@@ -89,6 +91,8 @@ public class YoutubeUtil {
 
     private static final String[] softFilters = {
             "full",
-            "osu"
+            "extended",
+            "osu",
+            "bandori"
     };
 }
