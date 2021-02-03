@@ -15,9 +15,14 @@ jikan:
 
 mal: https://myanimelist.net/anime/{id}/
 yt: https://youtube.googleapis.com/youtube/v3/search?part=snippet&maxResults=10&q={query}&type=video&videoDuration=short&key=<API_KEY>
+
+fixers:
+ - <Discord ID of a user>
+ - ...
 ```
 Replace `<BOT_TOKEN>` with the token obtained from your own Discord Bot (More details on creating a Discord Bot can be found [here](https://discord.com/developers/docs/intro)).
 Replace `<API_KEY>` with an api key you own from Google's Youtube API (More details can be found [here](https://developers.google.com/youtube/v3/docs)).
+Fixers will be allowed to modify the bot's cached song map to help improve the quality and accuracy of music being played. This role should only be given to trusted users.
 
 Once this is set up, you can run the .jar file using the following command:
 ```
@@ -59,3 +64,7 @@ List all anime types
 `again`
 
 Repeat the last play command
+
+``fix `<song name>` <ytid>``
+
+Fix a broken video ID for a given song (Authorized users only)

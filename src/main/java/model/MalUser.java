@@ -6,14 +6,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class MalUser implements Comparable<MalUser> {
 
     private static final Logger logger = LoggerFactory.getLogger(MalUser.class);
+
+    private static final Map<Long, AnimeObject> animeLibrary = new HashMap<>();
 
     private String username;
     private Set<AnimeObject> animeList;
@@ -32,7 +31,12 @@ public class MalUser implements Comparable<MalUser> {
         logger.info("populating " + username + "'s list");
         for (String url : jikanUrls) {
             ResponseEntity<JikanResponse> response = template.getForEntity(url, JikanResponse.class, Collections.singletonMap("user", username));
-            animeList.addAll(response.getBody().getAnime());
+            for (AnimeObject animeObject : response.getBody().getAnime()) {
+                if (!animeLibrary.containsKey(animeObject.getMalId())) {
+                    animeLibrary.put(animeObject.getMalId(), animeObject);
+                }
+                animeList.add(animeLibrary.get(animeObject.getMalId()));
+            }
         }
     }
 

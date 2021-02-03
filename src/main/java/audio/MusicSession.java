@@ -21,11 +21,11 @@ public class MusicSession {
 
     private static final Logger logger = LoggerFactory.getLogger(MusicSession.class);
 
-    private static final int MAX_RECENT_ANIME = 20;
+    private static final int MAX_RECENT_SONGS = 100;
 
     private final YmlConfig config;
     private final Set<MalUser> malUsers;
-    private final LinkedHashSet<Long> recentAnime;
+    private final LinkedHashSet<String> recentSongs;
 
     private MalSong currentSong;
     private String lastCommand;
@@ -37,7 +37,7 @@ public class MusicSession {
     public MusicSession(MalMusicListener listener, YmlConfig config, long guildId, AudioPlayerManager manager) {
         this.malUsers = new TreeSet<>();
         this.config = config;
-        this.recentAnime = new LinkedHashSet<>();
+        this.recentSongs = new LinkedHashSet<>();
 
         this.audioPlayer = manager.createPlayer();
         this.scheduler = new TrackScheduler(listener, guildId, this.audioPlayer);
@@ -56,6 +56,7 @@ public class MusicSession {
                 newUser.populate(config.getJikan());
             }
             catch (Exception e) {
+                malUsers.remove(newUser);
                 throw new Exception("could not find " + username + "'s list on MAL", e);
             }
         }
@@ -69,26 +70,29 @@ public class MusicSession {
         for (MalUser user : malUsers) {
             logger.info(user.getUsername() + ": " + user.getAnimeList().size());
         }
-        List<AnimeObject> collection = getCombinedList(combineMethod).filter((animeObject) -> animeTypes.isEmpty() || animeTypes.contains(animeObject.getType())).filter((animeObject) -> !recentAnime.contains(animeObject.getMalId())).collect(Collectors.toList());
+        List<AnimeObject> collection = getCombinedList(combineMethod).filter((animeObject) -> animeTypes.isEmpty() || animeTypes.contains(animeObject.getType())).filter((animeObject) -> (animeObject.getSongs() == null || !recentSongs.containsAll(animeObject.getSongs()))).collect(Collectors.toList());
         logger.info("total: " + collection.size());
         if (collection.size() > 0) {
             AnimeObject nextAnime = collection.get(new Random().nextInt(collection.size()));
-            recentAnime.add(nextAnime.getMalId());
-            if (recentAnime.size() > MAX_RECENT_ANIME) {
-                Iterator<Long> itr = recentAnime.iterator();
-                if (itr.hasNext()) {
-                    recentAnime.remove(itr.next());
-                }
-            }
             return nextAnime;
         }
-        else if (!recentAnime.isEmpty()) {
+        else if (!recentSongs.isEmpty()) {
             logger.info("ran out of anime, resetting list");
-            recentAnime.clear();
+            recentSongs.clear();
             return selectAnime(combineMethod, animeTypes);
         }
         else {
             return null;
+        }
+    }
+
+    public void addToRecent(String songName) {
+        recentSongs.add(songName);
+        if (recentSongs.size() > MAX_RECENT_SONGS) {
+            Iterator<String> itr = recentSongs.iterator();
+            if (itr.hasNext()) {
+                recentSongs.remove(itr.next());
+            }
         }
     }
 
@@ -158,5 +162,9 @@ public class MusicSession {
 
     public void setLastCommand(String lastCommand) {
         this.lastCommand = lastCommand;
+    }
+
+    public Set<String> filterRecent(Collection<String> songNames) {
+        return songNames.stream().filter((songName) -> !recentSongs.contains(songName)).collect(Collectors.toSet());
     }
 }

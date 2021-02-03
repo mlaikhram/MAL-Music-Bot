@@ -23,6 +23,8 @@ import util.*;
 
 import javax.annotation.Nonnull;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class MalMusicListener extends ListenerAdapter {
 
@@ -52,17 +54,18 @@ public class MalMusicListener extends ListenerAdapter {
         MessageChannel sourceChannel = event.getChannel();
         Guild guild = event.getGuild();
         String rawMessage = event.getMessage().getContentRaw();
-        String[] messageTokens = rawMessage.split("[ ]+");
-        for (int i = 1; i < messageTokens.length; ++i) {
-            messageTokens[i] = messageTokens[i].toLowerCase();
-        }
+//        String[] messageTokens = rawMessage.split("[ ]+");
+        String[] messageTokens = inputToCommand(rawMessage).toArray(new String[0]);
+//        for (int i = 1; i < messageTokens.length; ++i) {
+//            messageTokens[i] = messageTokens[i].toLowerCase();
+//        }
 
         boolean isAgain = false;
 
         if (event.isFromType(ChannelType.TEXT)) {
-            if ((MessageUtils.isUserMention(messageTokens[0]) && MessageUtils.mentionToUserID(messageTokens[0]).toString().equals(myID)) || messageTokens[0].toLowerCase().equals(MessageUtils.COMMAND_PROMPT)) {
+            if ((MessageUtils.isUserMention(messageTokens[0]) && MessageUtils.mentionToUserID(messageTokens[0]).toString().equals(myID)) || messageTokens[0].equalsIgnoreCase(MessageUtils.COMMAND_PROMPT)) {
                 logger.info("message received from " + author + ": " + rawMessage);
-                if (messageTokens.length >= 2 && messageTokens[1].equals("again") && SessionManager.getInstance().getMusicSession(guild).getLastCommand() != null) {
+                if (messageTokens.length >= 2 && messageTokens[1].equalsIgnoreCase("again") && SessionManager.getInstance().getMusicSession(guild).getLastCommand() != null) {
                     isAgain = true;
                     messageTokens = SessionManager.getInstance().getMusicSession(guild).getLastCommand().split("[ ]+");
                     for (int i = 1; i < messageTokens.length; ++i) {
@@ -70,13 +73,13 @@ public class MalMusicListener extends ListenerAdapter {
                     }
                 }
 
-                if (messageTokens.length <= 1 || (messageTokens.length >= 2 && messageTokens[1].equals("help"))) {
+                if (messageTokens.length <= 1 || (messageTokens.length >= 2 && messageTokens[1].equalsIgnoreCase("help"))) {
                     sourceChannel.sendMessage(MessageUtils.HELP_TEXT).queue();
                 }
-                else if (messageTokens.length >= 2 && messageTokens[1].equals("methods")) {
+                else if (messageTokens.length >= 2 && messageTokens[1].equalsIgnoreCase("methods")) {
                     sourceChannel.sendMessage(CombineMethod.getInfoText()).queue();
                 }
-                else if (messageTokens.length >= 2 && messageTokens[1].equals("types")) {
+                else if (messageTokens.length >= 2 && messageTokens[1].equalsIgnoreCase("types")) {
                     StringBuilder message = new StringBuilder();
                     message.append("Here's all of the anime types I know:\n\n");
                     for (AnimeType animeType : AnimeType.values()) {
@@ -85,7 +88,7 @@ public class MalMusicListener extends ListenerAdapter {
                     message.deleteCharAt(message.length() - 1);
                     sourceChannel.sendMessage(message.toString()).queue();
                 }
-                else if (messageTokens.length >= 2 && messageTokens[1].equals("add")) {
+                else if (messageTokens.length >= 2 && messageTokens[1].equalsIgnoreCase("add")) {
                     if (messageTokens.length > 2) {
                         StringBuilder message = new StringBuilder();
                         for (int i = 2; i < messageTokens.length; ++i) {
@@ -106,7 +109,7 @@ public class MalMusicListener extends ListenerAdapter {
                         sourceChannel.sendMessage("...Add who? You're gonna have to give me a MAL username (or more than one)").queue();
                     }
                 }
-                else if (messageTokens.length >= 2 && messageTokens[1].equals("remove")) {
+                else if (messageTokens.length >= 2 && messageTokens[1].equalsIgnoreCase("remove")) {
                     if (messageTokens.length > 2) {
                         StringBuilder message = new StringBuilder();
                         for (int i = 2; i < messageTokens.length; ++i) {
@@ -125,7 +128,7 @@ public class MalMusicListener extends ListenerAdapter {
                         sourceChannel.sendMessage("...Remove who? You're gonna have to give me a MAL username (or more than one)").queue();
                     }
                 }
-                else if (messageTokens.length >= 2 && messageTokens[1].equals("users")) {
+                else if (messageTokens.length >= 2 && messageTokens[1].equalsIgnoreCase("users")) {
                     StringBuilder message = new StringBuilder();
                     MusicSession currentSession = SessionManager.getInstance().getMusicSession(guild);
                     message.append("Current MAL Users (" + currentSession.getMalUsers().size() + "): \n");
@@ -135,7 +138,7 @@ public class MalMusicListener extends ListenerAdapter {
                     message.deleteCharAt(message.length() - 1);
                     sourceChannel.sendMessage(message.toString()).queue();
                 }
-                else if (messageTokens.length >= 2 && messageTokens[1].equals("play")) {
+                else if (messageTokens.length >= 2 && messageTokens[1].equalsIgnoreCase("play")) {
                     if (SessionManager.getInstance().getMusicSession(guild).getCurrentSong() != null && !isAgain) {
                         sourceChannel.sendMessage("Can't you see I'm already playing a song??").queue();
                         return;
@@ -191,6 +194,9 @@ public class MalMusicListener extends ListenerAdapter {
                                             for (String malSong : selectedAnime.getSongs()) {
                                                 logger.info(malSong);
                                             }
+                                            if (SessionManager.getInstance().getMusicSession(guild).filterRecent(selectedAnime.getSongs()).isEmpty()) {
+                                                selectedAnime = null;
+                                            }
                                         }
                                     }
                                     else if (selectedAnime == null) {
@@ -205,7 +211,8 @@ public class MalMusicListener extends ListenerAdapter {
                                     SessionManager.getInstance().getMusicSession(guild).setLastCommand(rawMessage);
                                 }
                                 try {
-                                    MalSong song = YoutubeUtil.pickSong(sourceChannel.getIdLong(), config.getYt(), selectedAnime);
+                                    MalSong song = YoutubeUtil.pickSong(SessionManager.getInstance().getMusicSession(guild), sourceChannel.getIdLong(), config.getYt(), selectedAnime);
+                                    SessionManager.getInstance().getMusicSession(guild).addToRecent(song.getName());
                                     SessionManager.getInstance().loadAndPlay(guild, sourceChannel, song.getUrl());
                                     logger.info("Now Playing: " + song.getUrl());
                                     SessionManager.getInstance().getMusicSession(guild).setCurrentSong(song);
@@ -236,7 +243,7 @@ public class MalMusicListener extends ListenerAdapter {
                         sourceChannel.sendMessage("How can we play if you're not in a voice channel?").queue();
                     }
                 }
-                else if (messageTokens.length >= 2 && messageTokens[1].trim().equals("stop")) {
+                else if (messageTokens.length >= 2 && messageTokens[1].equalsIgnoreCase("stop")) {
                     MusicSession musicSession = SessionManager.getInstance().getMusicSession(guild);
                     MalSong currentSong = musicSession.getCurrentSong();
                     if (currentSong != null) {
@@ -249,6 +256,20 @@ public class MalMusicListener extends ListenerAdapter {
                     }
                     else {
                         sourceChannel.sendMessage("I'm not even playing a song right now!").queue();
+                    }
+                }
+                else if (messageTokens.length >= 4 && messageTokens[1].equalsIgnoreCase("fix")) {
+                    if (config.getFixers().contains(member.getId())) {
+                        try {
+                            DBUtils.fixSongId(messageTokens[2], messageTokens[3]);
+                            sourceChannel.sendMessage("Done! The song should be fixed now!").queue();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            sourceChannel.sendMessage("Hmm..." + e.getMessage()).queue();
+                        }
+                    }
+                    else {
+                        sourceChannel.sendMessage("Sorry, but you're not allowed to fix songs").queue();
                     }
                 }
                 else {
@@ -291,5 +312,14 @@ public class MalMusicListener extends ListenerAdapter {
                 SessionManager.getInstance().getMusicSession(leftChannel.getGuild()).scheduler.stopTrack();
             }
         }
+    }
+
+    private List<String> inputToCommand(String message) {
+        List<String> command = new ArrayList<>();
+        Matcher m = Pattern.compile("([^`]\\S*|`.+?`)\\s*").matcher(message);
+        while (m.find()) {
+            command.add(m.group(1).replace("`", ""));
+        }
+        return command;
     }
 }

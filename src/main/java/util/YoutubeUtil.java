@@ -1,9 +1,12 @@
 package util;
 
+import audio.MusicSession;
+import audio.SessionManager;
 import model.AnimeObject;
 import model.MalSong;
 import model.YoutubeResponse;
 import model.YoutubeVideo;
+import net.dv8tion.jda.api.entities.Guild;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -12,6 +15,7 @@ import org.springframework.web.client.RestTemplate;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class YoutubeUtil {
@@ -21,8 +25,9 @@ public class YoutubeUtil {
     private static final String VIDEO_URL = "https://www.youtube.com/watch?v={id}";
     private static final String EMPTY_SEARCH = "[no results]";
 
-    public static MalSong pickSong(long channelId, String url, AnimeObject anime) throws Exception {
-        String song = (String)anime.getSongs().toArray()[new Random().nextInt(anime.getSongs().size())];
+    public static MalSong pickSong(MusicSession session, long channelId, String url, AnimeObject anime) throws Exception {
+        Set<String> filteredSongs = session.filterRecent(anime.getSongs());
+        String song = (String) filteredSongs.toArray()[new Random().nextInt(filteredSongs.size())];
         String ytid = DBUtils.getSongId(song);
         if (ytid == null) {
             String query = anime.getEnglishTitle() + " " + song + " song";
@@ -79,6 +84,8 @@ public class YoutubeUtil {
             "pmv",
             "piano",
             "guitar",
+            "orchestra",
+            "a capella",
             "music box",
             "eng",
             "english",

@@ -38,11 +38,16 @@ public class DBUtils {
     }
 
     public static void fixSongId(String songName, String newId) throws Exception {
-        try (Connection connection = DriverManager.getConnection("jdbc:sqlite:mal.db")) {
-            PreparedStatement statement = connection.prepareStatement("UPDATE songs SET ytid=? WHERE name=?");
-            statement.setString(1, newId);
-            statement.setString(2, songName);
-            statement.execute();
+        if (getSongId(songName) != null) {
+            try (Connection connection = DriverManager.getConnection("jdbc:sqlite:mal.db")) {
+                PreparedStatement statement = connection.prepareStatement("UPDATE songs SET ytid=? WHERE name=?");
+                statement.setString(1, newId);
+                statement.setString(2, songName);
+                statement.execute();
+            }
+        }
+        else {
+            throw new Exception("`" + songName + "` isn't not any song I know...");
         }
     }
 

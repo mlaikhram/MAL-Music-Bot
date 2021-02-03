@@ -18,6 +18,8 @@ public class YmlConfig {
     @JsonProperty
     private String yt;
 
+    @JsonProperty
+    private List<String> fixers;
 
     public String getToken() {
         return token;
@@ -33,5 +35,9 @@ public class YmlConfig {
 
     public String getYt() {
         return yt;
+    }
+
+    public List<String> getFixers() {
+        return fixers;
     }
 }
