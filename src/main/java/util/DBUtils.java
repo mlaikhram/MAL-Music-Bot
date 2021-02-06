@@ -50,12 +50,4 @@ public class DBUtils {
             throw new Exception("`" + songName + "` isn't not any song I know...");
         }
     }
-
-    // Manual fix for inaccurate ytids
-    public static void main(String[] args) throws Exception {
-        init();
-        String songName = "";
-        String ytid = "";
-        fixSongId(songName, ytid);
-    }
 }

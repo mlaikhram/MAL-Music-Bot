@@ -18,7 +18,7 @@ public enum CombineMethod {
     }
 
     public static CombineMethod fromInt(int i) {
-        CombineMethod type = intToTypeMap.get(Integer.valueOf(i));
+        CombineMethod type = intToTypeMap.get(i);
         if (type == null)
             return CombineMethod.WEIGHTED;
         return type;

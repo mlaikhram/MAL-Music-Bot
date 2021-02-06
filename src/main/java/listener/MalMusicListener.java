@@ -2,9 +2,9 @@ package listener;
 
 import audio.SessionManager;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason;
-import model.AnimeObject;
-import model.MalSong;
-import model.MalUser;
+import model.mal.AnimeObject;
+import model.mal.MalSong;
+import model.mal.MalUser;
 import audio.MusicSession;
 import model.YmlConfig;
 import net.dv8tion.jda.api.JDA;
@@ -54,14 +54,9 @@ public class MalMusicListener extends ListenerAdapter {
         MessageChannel sourceChannel = event.getChannel();
         Guild guild = event.getGuild();
         String rawMessage = event.getMessage().getContentRaw();
-//        String[] messageTokens = rawMessage.split("[ ]+");
         String[] messageTokens = inputToCommand(rawMessage).toArray(new String[0]);
-//        for (int i = 1; i < messageTokens.length; ++i) {
-//            messageTokens[i] = messageTokens[i].toLowerCase();
-//        }
 
         boolean isAgain = false;
-
         if (event.isFromType(ChannelType.TEXT)) {
             if ((MessageUtils.isUserMention(messageTokens[0]) && MessageUtils.mentionToUserID(messageTokens[0]).toString().equals(myID)) || messageTokens[0].equalsIgnoreCase(MessageUtils.COMMAND_PROMPT)) {
                 logger.info("message received from " + author + ": " + rawMessage);
@@ -73,10 +68,7 @@ public class MalMusicListener extends ListenerAdapter {
                     }
                 }
 
-                if (messageTokens.length <= 1 || (messageTokens.length >= 2 && messageTokens[1].equalsIgnoreCase("help"))) {
-                    sourceChannel.sendMessage(MessageUtils.HELP_TEXT).queue();
-                }
-                else if (messageTokens.length >= 2 && messageTokens[1].equalsIgnoreCase("methods")) {
+                if (messageTokens.length >= 2 && messageTokens[1].equalsIgnoreCase("methods")) {
                     sourceChannel.sendMessage(CombineMethod.getInfoText()).queue();
                 }
                 else if (messageTokens.length >= 2 && messageTokens[1].equalsIgnoreCase("types")) {
@@ -272,9 +264,12 @@ public class MalMusicListener extends ListenerAdapter {
                         sourceChannel.sendMessage("Sorry, but you're not allowed to fix songs").queue();
                     }
                 }
+                else if (messageTokens.length <= 1 || (containsIgnoreCase("help", messageTokens, "[^a-zA-Z]"))) {
+                    sourceChannel.sendMessage(MessageUtils.HELP_TEXT).queue();
+                }
                 else {
                     logger.error("unknown command");
-                    sourceChannel.sendMessage("Were you talking to me?").queue();
+                    sourceChannel.sendMessage(config.getRandomVoiceLine() + "If you need `help`, just tag me and ask for it!").queue();
                 }
             }
         }
@@ -290,7 +285,7 @@ public class MalMusicListener extends ListenerAdapter {
         Guild guild = jda.getGuildById(guildId);
         MusicSession musicSession = SessionManager.getInstance().getMusicSession(guild);
         MalSong lastSong = musicSession.getCurrentSong();
-        guild.getTextChannelById(lastSong.getPlayedFromMessageChannelId()).sendMessage(MessageUtils.getSongEndMessage(endReason) + " The song was `" + lastSong.getName() +  "` from " + lastSong.getAnime().getEnglishTitle() + (lastSong.getAnime().getTitle().equals(lastSong.getAnime().getEnglishTitle()) ? "" : (" (" + lastSong.getAnime().getTitle() + ")")) + " in case you were wondering\n" + lastSong.getUrl()).queue();
+        guild.getTextChannelById(lastSong.getPlayedFromMessageChannelId()).sendMessage(MessageUtils.getSongEndMessage(endReason) + " The song was `" + lastSong.getName() +  "` from " + lastSong.getAnime().getEnglishTitle() + (lastSong.getAnime().getTitle().equals(lastSong.getAnime().getEnglishTitle()) ? "" : (" (" + lastSong.getAnime().getTitle() + ")")) + (Arrays.asList(6547L, 9062L, 10067L).contains(lastSong.getAnime().getMalId()) ? "! That was a really good one!\n" : " in case you were wondering\n") + lastSong.getUrl()).queue();
         musicSession.setCurrentSong(null);
     }
 
@@ -321,5 +316,14 @@ public class MalMusicListener extends ListenerAdapter {
             command.add(m.group(1).replace("`", ""));
         }
         return command;
+    }
+
+    private boolean containsIgnoreCase(String target, String[] args, String filterRegex) {
+        for (String arg : args) {
+            if (arg.replaceAll(filterRegex, "").equalsIgnoreCase(target)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

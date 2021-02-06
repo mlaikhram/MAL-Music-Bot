@@ -1,12 +1,10 @@
 package util;
 
 import audio.MusicSession;
-import audio.SessionManager;
-import model.AnimeObject;
-import model.MalSong;
-import model.YoutubeResponse;
-import model.YoutubeVideo;
-import net.dv8tion.jda.api.entities.Guild;
+import model.mal.AnimeObject;
+import model.mal.MalSong;
+import model.youtube.YoutubeResponse;
+import model.youtube.YoutubeVideo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -48,7 +46,7 @@ public class YoutubeUtil {
         return new MalSong(song, anime, VIDEO_URL.replace("{id}", ytid), channelId);
     }
 
-    private static YoutubeVideo filterResults(AnimeObject anime, List<YoutubeVideo> videos) throws Exception {
+    private static YoutubeVideo filterResults(AnimeObject anime, List<YoutubeVideo> videos) {
         List<YoutubeVideo> hardFiltered = videos.stream().filter((video) -> !containsAny(anime, video.getSnippet().getTitle().toLowerCase(), hardFilters)).collect(Collectors.toList());
         if (!hardFiltered.isEmpty()) {
             logger.info("getting filtered vid (" + hardFiltered.size() + "/" + videos.size() + ")");

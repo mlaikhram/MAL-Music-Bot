@@ -1,4 +1,4 @@
-package model;
+package model.mal;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 

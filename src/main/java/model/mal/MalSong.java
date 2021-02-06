@@ -1,4 +1,4 @@
-package model;
+package model.mal;
 
 public class MalSong {
 

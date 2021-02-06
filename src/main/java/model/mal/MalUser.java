@@ -1,4 +1,4 @@
-package model;
+package model.mal;
 
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;

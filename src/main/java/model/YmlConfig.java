@@ -2,7 +2,9 @@ package model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 public class YmlConfig {
 
@@ -20,6 +22,9 @@ public class YmlConfig {
 
     @JsonProperty
     private List<String> fixers;
+
+    @JsonProperty
+    private ArrayList<String> voiceLines;
 
     public String getToken() {
         return token;
@@ -39,5 +44,12 @@ public class YmlConfig {
 
     public List<String> getFixers() {
         return fixers;
+    }
+
+    public String getRandomVoiceLine() {
+        if (voiceLines.isEmpty()) {
+            return "";
+        }
+        return voiceLines.get(new Random().nextInt(voiceLines.size())) + " ";
     }
 }
