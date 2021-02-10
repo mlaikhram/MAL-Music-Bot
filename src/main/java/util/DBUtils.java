@@ -47,7 +47,7 @@ public class DBUtils {
             }
         }
         else {
-            throw new Exception("`" + songName + "` isn't not any song I know...");
+            throw new Exception("`" + songName + "` isn't any song I know...");
         }
     }
 }

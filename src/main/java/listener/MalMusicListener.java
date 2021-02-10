@@ -58,7 +58,7 @@ public class MalMusicListener extends ListenerAdapter {
 
         boolean isAgain = false;
         if (event.isFromType(ChannelType.TEXT)) {
-            if ((MessageUtils.isUserMention(messageTokens[0]) && MessageUtils.mentionToUserID(messageTokens[0]).toString().equals(myID)) || messageTokens[0].equalsIgnoreCase(MessageUtils.COMMAND_PROMPT)) {
+            if (messageTokens.length > 0 && (MessageUtils.isUserMention(messageTokens[0]) && MessageUtils.mentionToUserID(messageTokens[0]).toString().equals(myID)) || messageTokens[0].equalsIgnoreCase(MessageUtils.COMMAND_PROMPT)) {
                 logger.info("message received from " + author + ": " + rawMessage);
                 if (messageTokens.length >= 2 && messageTokens[1].equalsIgnoreCase("again") && SessionManager.getInstance().getMusicSession(guild).getLastCommand() != null) {
                     isAgain = true;
