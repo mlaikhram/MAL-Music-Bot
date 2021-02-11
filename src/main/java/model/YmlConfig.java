@@ -21,6 +21,9 @@ public class YmlConfig {
     private String yt;
 
     @JsonProperty
+    private String dbPath;
+
+    @JsonProperty
     private List<String> fixers;
 
     @JsonProperty
@@ -40,6 +43,10 @@ public class YmlConfig {
 
     public String getYt() {
         return yt;
+    }
+
+    public String getDbPath() {
+        return dbPath;
     }
 
     public List<String> getFixers() {

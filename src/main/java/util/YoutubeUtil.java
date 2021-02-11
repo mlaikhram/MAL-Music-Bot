@@ -26,7 +26,9 @@ public class YoutubeUtil {
     public static MalSong pickSong(MusicSession session, long channelId, String url, AnimeObject anime) throws Exception {
         Set<String> filteredSongs = session.filterRecent(anime.getSongs());
         String song = (String) filteredSongs.toArray()[new Random().nextInt(filteredSongs.size())];
+        logger.info("chose: " + song);
         String ytid = DBUtils.getSongId(song);
+
         if (ytid == null) {
             String query = anime.getEnglishTitle() + " " + song + " song";
             logger.info("couldn't find song in db, searching youtube for: " + query);
@@ -41,7 +43,7 @@ public class YoutubeUtil {
             DBUtils.addSong(song, ytid);
         }
         else if (ytid.equals(EMPTY_SEARCH)) {
-            throw new Exception("I couldn't find any songs for " + anime.getEnglishTitle());
+            throw new Exception("I couldn't find any results for " + MalSong.asString(song, anime.getEnglishTitle(), anime.getTitle()));
         }
         return new MalSong(song, anime, VIDEO_URL.replace("{id}", ytid), channelId);
     }

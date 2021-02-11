@@ -16,6 +16,8 @@ jikan:
 mal: https://myanimelist.net/anime/{id}/
 yt: https://youtube.googleapis.com/youtube/v3/search?part=snippet&maxResults=10&q={query}&type=video&videoDuration=short&key=<API_KEY>
 
+dbPath: <FILE_PATH>
+
 fixers:
  - <Discord ID of a user>
  - ...
@@ -26,6 +28,7 @@ voiceLines:
 ```
 Replace `<BOT_TOKEN>` with the token obtained from your own Discord Bot (More details on creating a Discord Bot can be found [here](https://discord.com/developers/docs/intro)).
 Replace `<API_KEY>` with an api key you own from Google's Youtube API (More details can be found [here](https://developers.google.com/youtube/v3/docs)).
+Replace `<FILE_PATH>` with the path to your db file for caching (if the file does not exist, it will be created).
 Fixers will be allowed to modify the bot's cached song map to help improve the quality and accuracy of music being played. This role should only be given to trusted users.
 VoiceLines are used as filler text if someone mentions the bot, but gives an invalid command. You may use as many as you want, and they will be selected at random when needed.
 

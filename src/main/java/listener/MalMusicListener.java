@@ -58,7 +58,7 @@ public class MalMusicListener extends ListenerAdapter {
 
         boolean isAgain = false;
         if (event.isFromType(ChannelType.TEXT)) {
-            if (messageTokens.length > 0 && (MessageUtils.isUserMention(messageTokens[0]) && MessageUtils.mentionToUserID(messageTokens[0]).toString().equals(myID)) || messageTokens[0].equalsIgnoreCase(MessageUtils.COMMAND_PROMPT)) {
+            if (messageTokens.length > 0 && ((MessageUtils.isUserMention(messageTokens[0]) && MessageUtils.mentionToUserID(messageTokens[0]).toString().equals(myID)) || messageTokens[0].equalsIgnoreCase(MessageUtils.COMMAND_PROMPT))) {
                 logger.info("message received from " + author + ": " + rawMessage);
                 if (messageTokens.length >= 2 && messageTokens[1].equalsIgnoreCase("again") && SessionManager.getInstance().getMusicSession(guild).getLastCommand() != null) {
                     isAgain = true;
@@ -285,7 +285,7 @@ public class MalMusicListener extends ListenerAdapter {
         Guild guild = jda.getGuildById(guildId);
         MusicSession musicSession = SessionManager.getInstance().getMusicSession(guild);
         MalSong lastSong = musicSession.getCurrentSong();
-        guild.getTextChannelById(lastSong.getPlayedFromMessageChannelId()).sendMessage(MessageUtils.getSongEndMessage(endReason) + " The song was `" + lastSong.getName() +  "` from " + lastSong.getAnime().getEnglishTitle() + (lastSong.getAnime().getTitle().equals(lastSong.getAnime().getEnglishTitle()) ? "" : (" (" + lastSong.getAnime().getTitle() + ")")) + (Arrays.asList(6547L, 9062L, 10067L).contains(lastSong.getAnime().getMalId()) ? "! That was a really good one!\n" : " in case you were wondering\n") + lastSong.getUrl()).queue();
+        guild.getTextChannelById(lastSong.getPlayedFromMessageChannelId()).sendMessage(MessageUtils.getSongEndMessage(endReason) + " The song was " + lastSong.toString() + (Arrays.asList(6547L, 9062L, 10067L).contains(lastSong.getAnime().getMalId()) ? "! That was a really good one!\n" : " in case you were wondering\n") + lastSong.getUrl()).queue();
         musicSession.setCurrentSong(null);
     }
 
