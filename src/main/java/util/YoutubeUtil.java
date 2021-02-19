@@ -22,12 +22,20 @@ public class YoutubeUtil {
 
     private static final String VIDEO_URL = "https://www.youtube.com/watch?v={id}";
     private static final String EMPTY_SEARCH = "[no results]";
+    private static final String UNSAVED_ANIME = "[not saved]";
 
     public static MalSong pickSong(MusicSession session, long channelId, String url, AnimeObject anime) throws Exception {
         Set<String> filteredSongs = session.filterRecent(anime.getSongs());
         String song = (String) filteredSongs.toArray()[new Random().nextInt(filteredSongs.size())];
         logger.info("chose: " + song);
-        String ytid = DBUtils.getSongId(song);
+        String ytid = DBUtils.getSongId(UNSAVED_ANIME, song);
+        if (ytid == null) {
+            ytid = DBUtils.getSongId(anime.getEnglishTitle(), song);
+        }
+        else {
+            logger.info("didn't save anime name before, fixing...");
+            DBUtils.fixAnimeName(UNSAVED_ANIME, anime.getEnglishTitle(), song);
+        }
 
         if (ytid == null) {
             String query = anime.getEnglishTitle() + " " + song + " song";
@@ -36,11 +44,11 @@ public class YoutubeUtil {
             ResponseEntity<YoutubeResponse> response = template.getForEntity(url, YoutubeResponse.class, Collections.singletonMap("query", query));
             YoutubeVideo video = filterResults(anime, response.getBody().getVideos());
             if (video == null) {
-                DBUtils.addSong(song, EMPTY_SEARCH);
+                DBUtils.addSong(anime.getEnglishTitle(), song, EMPTY_SEARCH);
                 throw new Exception("I couldn't find any songs for " + anime.getEnglishTitle());
             }
             ytid = video.getId().getVideoId();
-            DBUtils.addSong(song, ytid);
+            DBUtils.addSong(anime.getEnglishTitle(), song, ytid);
         }
         else if (ytid.equals(EMPTY_SEARCH)) {
             throw new Exception("I couldn't find any results for " + MalSong.asString(song, anime.getEnglishTitle(), anime.getTitle()));

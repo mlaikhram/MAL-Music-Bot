@@ -250,10 +250,10 @@ public class MalMusicListener extends ListenerAdapter {
                         sourceChannel.sendMessage("I'm not even playing a song right now!").queue();
                     }
                 }
-                else if (messageTokens.length >= 4 && messageTokens[1].equalsIgnoreCase("fix")) {
+                else if (messageTokens.length >= 5 && messageTokens[1].equalsIgnoreCase("fix")) {
                     if (config.getFixers().contains(member.getId())) {
                         try {
-                            DBUtils.fixSongId(messageTokens[2], messageTokens[3]);
+                            DBUtils.fixSongId(messageTokens[2], messageTokens[3], messageTokens[4]);
                             sourceChannel.sendMessage("Done! The song should be fixed now!").queue();
                         } catch (Exception e) {
                             e.printStackTrace();
@@ -285,7 +285,7 @@ public class MalMusicListener extends ListenerAdapter {
         Guild guild = jda.getGuildById(guildId);
         MusicSession musicSession = SessionManager.getInstance().getMusicSession(guild);
         MalSong lastSong = musicSession.getCurrentSong();
-        guild.getTextChannelById(lastSong.getPlayedFromMessageChannelId()).sendMessage(MessageUtils.getSongEndMessage(endReason) + " The song was " + lastSong.toString() + (Arrays.asList(6547L, 9062L, 10067L).contains(lastSong.getAnime().getMalId()) ? "! That was a really good one!\n" : " in case you were wondering\n") + lastSong.getUrl()).queue();
+        guild.getTextChannelById(lastSong.getPlayedFromMessageChannelId()).sendMessage(MessageUtils.getSongEndMessage(endReason) + " The song was " + lastSong.toString() + (Arrays.asList(6547L, 9062L, 10067L).contains(lastSong.getAnime().getMalId()) ? "! That was a really good one :heart:\n" : " in case you were wondering\n") + lastSong.getUrl()).queue();
         musicSession.setCurrentSong(null);
     }
 

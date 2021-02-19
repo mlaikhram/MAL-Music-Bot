@@ -73,6 +73,6 @@ List all anime types
 
 Repeat the last play command
 
-``fix `<song name>` <ytid>``
+``fix `<english anime name>` `<song name>` <ytid>``
 
 Fix a broken video ID for a given song (Authorized users only)

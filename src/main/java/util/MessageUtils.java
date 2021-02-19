@@ -60,6 +60,6 @@ public class MessageUtils {
         "`again`\n" +
         "Repeat the last play command\n" +
         "\n" +
-        "``fix `<song name>` <ytid>``\n" +
+        "``fix `<english anime name>` `<song name>` <ytid>``\n" +
         "Fix a broken video ID for a given song (Authorized users only)";
 }
