@@ -25,6 +25,7 @@ import javax.annotation.Nonnull;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class MalMusicListener extends ListenerAdapter {
 
@@ -285,8 +286,20 @@ public class MalMusicListener extends ListenerAdapter {
         Guild guild = jda.getGuildById(guildId);
         MusicSession musicSession = SessionManager.getInstance().getMusicSession(guild);
         MalSong lastSong = musicSession.getCurrentSong();
-        guild.getTextChannelById(lastSong.getPlayedFromMessageChannelId()).sendMessage(MessageUtils.getSongEndMessage(endReason) + " The song was " + lastSong.toString() + (Arrays.asList(6547L, 9062L, 10067L).contains(lastSong.getAnime().getMalId()) ? "! That was a really good one :heart:\n" : " in case you were wondering\n") + lastSong.getUrl()).queue();
+        String usersWithSong = commaJoin(musicSession.getMalUsers().stream().filter((user) -> user.getAnimeList().contains(lastSong.getAnime())).map(MalUser::getUsername).collect(Collectors.toList()));
+        guild.getTextChannelById(lastSong.getPlayedFromMessageChannelId()).sendMessage(MessageUtils.getSongEndMessage(endReason) + " The song was " + lastSong.toString() + (Arrays.asList(6547L, 9062L, 10067L).contains(lastSong.getAnime().getMalId()) ? "! That was a really good one \u2764\uFE0F\n" : " in case you were wondering\n") + lastSong.getUrl() + "\n" + usersWithSong + " should've known that one.").queue();
         musicSession.setCurrentSong(null);
+    }
+
+    private String commaJoin(List<String> items) {
+        if (items.isEmpty()) {
+            return "Nobody";
+        }
+        else if (items.size() == 1) {
+            return items.get(0);
+        }
+        String ans = String.join(", ", items.subList(0, items.size() - 1));
+        return ans + " and " + items.get(items.size() - 1);
     }
 
     @Override

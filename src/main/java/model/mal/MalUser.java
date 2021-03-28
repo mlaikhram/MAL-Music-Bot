@@ -30,13 +30,21 @@ public class MalUser implements Comparable<MalUser> {
         RestTemplate template = new RestTemplate();
         logger.info("populating " + username + "'s list");
         for (String url : jikanUrls) {
-            ResponseEntity<JikanResponse> response = template.getForEntity(url, JikanResponse.class, Collections.singletonMap("user", username));
-            for (AnimeObject animeObject : response.getBody().getAnime()) {
-                if (!animeLibrary.containsKey(animeObject.getMalId())) {
-                    animeLibrary.put(animeObject.getMalId(), animeObject);
+            int page = 1;
+            List<AnimeObject> responseAnime;
+            do {
+                logger.info("trying page " + page);
+                ResponseEntity<JikanResponse> response = template.getForEntity(url, JikanResponse.class, Map.of("user", username, "page", page));
+                responseAnime = response.getBody().getAnime();
+                for (AnimeObject animeObject : responseAnime) {
+                    if (!animeLibrary.containsKey(animeObject.getMalId())) {
+                        animeLibrary.put(animeObject.getMalId(), animeObject);
+                    }
+                    animeList.add(animeLibrary.get(animeObject.getMalId()));
                 }
-                animeList.add(animeLibrary.get(animeObject.getMalId()));
-            }
+                ++page;
+            } while (!responseAnime.isEmpty());
+            logger.info("page " + (page - 1) + " was empty");
         }
     }
 

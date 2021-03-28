@@ -10,6 +10,7 @@ import model.YmlConfig;
 import net.dv8tion.jda.api.audio.AudioSendHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.web.client.HttpServerErrorException;
 import util.AnimeType;
 import util.CombineMethod;
 
@@ -55,9 +56,13 @@ public class MusicSession {
                 malUsers.add(newUser);
                 newUser.populate(config.getJikan());
             }
+            catch (HttpServerErrorException e) {
+                malUsers.remove(newUser);
+                throw new Exception("Could not add " + username + ": " + e.getMessage() + (e.getStatusCode().value() / 100 == 5 ? ". MAL might be having server issues" : ""), e);
+            }
             catch (Exception e) {
                 malUsers.remove(newUser);
-                throw new Exception("could not find " + username + "'s list on MAL", e);
+                throw new Exception("could not add " + username + ": " + e.getMessage(), e);
             }
         }
     }

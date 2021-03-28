@@ -101,7 +101,8 @@ public class YoutubeUtil {
             "pv",
             "preview",
             "trailer",
-            "live"
+            "live",
+            "scene"
     };
 
     private static final String[] softFilters = {

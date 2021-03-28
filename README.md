@@ -10,8 +10,8 @@ This will build the .jar file into the `target` folder. Before running the .jar 
 ```
 token: <BOT_TOKEN>
 jikan:
-  - https://api.jikan.moe/v3/user/{user}/animelist/watching
-  - https://api.jikan.moe/v3/user/{user}/animelist/completed
+  - https://api.jikan.moe/v3/user/{user}/animelist/watching/{page}
+  - https://api.jikan.moe/v3/user/{user}/animelist/completed/{page}
 
 mal: https://myanimelist.net/anime/{id}/
 yt: https://youtube.googleapis.com/youtube/v3/search?part=snippet&maxResults=10&q={query}&type=video&videoDuration=short&key=<API_KEY>
