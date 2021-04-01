@@ -4,15 +4,18 @@ import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import listener.MalMusicListener;
 import model.mal.AnimeObject;
+import model.mal.JikanUserResponse;
 import model.mal.MalSong;
 import model.mal.MalUser;
-import model.YmlConfig;
+import model.config.YmlConfig;
 import net.dv8tion.jda.api.audio.AudioSendHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.HttpServerErrorException;
 import util.AnimeType;
 import util.CombineMethod;
+import util.JikanUtils;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -46,15 +49,17 @@ public class MusicSession {
         this.audioSendHandler = new AudioPlayerSendHandler(this.audioPlayer);
     }
 
-    public void addUser(String username) throws Exception {
-        MalUser newUser = new MalUser(username);
+    public JikanUserResponse addUser(String url, String username) throws Exception { // TODO: update mal user to store user info and display completed/watching count in success message
+        ResponseEntity<JikanUserResponse> response = JikanUtils.getUser(url, username, true);
+        MalUser newUser = new MalUser(response.getBody().getUsername());
         if (malUsers.contains(newUser)) {
             throw new Exception(username + " is already added to this session!");
         }
         else {
             try {
                 malUsers.add(newUser);
-                newUser.populate(config.getJikan());
+                newUser.populate(config.getJikan().getUrl());
+                return response.getBody();
             }
             catch (HttpServerErrorException e) {
                 malUsers.remove(newUser);

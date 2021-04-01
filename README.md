@@ -8,19 +8,21 @@ gradle clean jar
 ```
 This will build the .jar file into the `target` folder. Before running the .jar file, you will need to create a file called `bot.yml` and place it in the same directory as the .jar file. `bot.yml` should contain the following lines:
 ```
-token: <BOT_TOKEN>
+discord:
+    token: <BOT_TOKEN>
+    fixers:
+     - <Discord ID of a user>
+     - ...
+
 jikan:
-  - https://api.jikan.moe/v3/user/{user}/animelist/watching/{page}
-  - https://api.jikan.moe/v3/user/{user}/animelist/completed/{page}
+    url: https://api.jikan.moe/v3
 
-mal: https://myanimelist.net/anime/{id}/
-yt: https://youtube.googleapis.com/youtube/v3/search?part=snippet&maxResults=10&q={query}&type=video&videoDuration=short&key=<API_KEY>
+youtube:
+    token: <API_KEY>
+    url: https://youtube.googleapis.com/youtube/v3
 
-dbPath: <FILE_PATH>
-
-fixers:
- - <Discord ID of a user>
- - ...
+db:
+    path: <FILE_PATH>
 
 voiceLines:
  - Example voice line.

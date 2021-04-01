@@ -1,4 +1,4 @@
-package model;
+package model.config;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -9,48 +9,34 @@ import java.util.Random;
 public class YmlConfig {
 
     @JsonProperty
-    private String token;
+    private DiscordConfig discord;
 
     @JsonProperty
-    private List<String> jikan;
+    private JikanConfig jikan;
 
     @JsonProperty
-    private String mal;
+    private YoutubeConfig youtube;
 
     @JsonProperty
-    private String yt;
-
-    @JsonProperty
-    private String dbPath;
-
-    @JsonProperty
-    private List<String> fixers;
+    private DbConfig db;
 
     @JsonProperty
     private ArrayList<String> voiceLines;
 
-    public String getToken() {
-        return token;
+    public DiscordConfig getDiscord() {
+        return discord;
     }
 
-    public List<String> getJikan() {
+    public JikanConfig getJikan() {
         return jikan;
     }
 
-    public String getMal() {
-        return mal;
+    public YoutubeConfig getYoutube() {
+        return youtube;
     }
 
-    public String getYt() {
-        return yt;
-    }
-
-    public String getDbPath() {
-        return dbPath;
-    }
-
-    public List<String> getFixers() {
-        return fixers;
+    public DbConfig getDb() {
+        return db;
     }
 
     public String getRandomVoiceLine() {

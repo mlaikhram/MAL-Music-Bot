@@ -29,13 +29,4 @@ public class MalSong {
     public long getPlayedFromMessageChannelId() {
         return playedFromMessageChannelId;
     }
-
-    @Override
-    public String toString() {
-        return asString(name, anime.getEnglishTitle(), anime.getTitle());
-    }
-
-    public static String asString(String songName, String englishTitle, String title) {
-        return "`" + songName +  "` from " + englishTitle + (title.equals(englishTitle) ? "" : (" (" + title + ")"));
-    }
 }

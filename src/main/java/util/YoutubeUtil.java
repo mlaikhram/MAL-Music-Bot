@@ -10,23 +10,19 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Random;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class YoutubeUtil {
 
     private static final Logger logger = LoggerFactory.getLogger(YoutubeUtil.class);
 
+    private static final String SEARCH_ENDPOINT = "/search?part=snippet&maxResults=10&q={query}&type=video&videoDuration=short&key={token}";
     private static final String VIDEO_URL = "https://www.youtube.com/watch?v={id}";
     private static final String EMPTY_SEARCH = "[no results]";
     private static final String UNSAVED_ANIME = "[not saved]";
 
-    public static MalSong pickSong(MusicSession session, long channelId, String url, AnimeObject anime) throws Exception {
-        Set<String> filteredSongs = session.filterRecent(anime.getSongs());
-        String song = (String) filteredSongs.toArray()[new Random().nextInt(filteredSongs.size())];
+    public static MalSong getMalSong(String baseUrl, String token, String song, long channelId, AnimeObject anime) throws Exception {
         logger.info("chose: " + song);
         String ytid = DBUtils.getSongId(UNSAVED_ANIME, song);
         if (ytid == null) {
@@ -41,7 +37,7 @@ public class YoutubeUtil {
             String query = anime.getEnglishTitle() + " " + song + " song";
             logger.info("couldn't find song in db, searching youtube for: " + query);
             RestTemplate template = new RestTemplate();
-            ResponseEntity<YoutubeResponse> response = template.getForEntity(url, YoutubeResponse.class, Collections.singletonMap("query", query));
+            ResponseEntity<YoutubeResponse> response = template.getForEntity(baseUrl + SEARCH_ENDPOINT, YoutubeResponse.class, Map.of("query", query, "token", token));
             YoutubeVideo video = filterResults(anime, response.getBody().getVideos());
             if (video == null) {
                 DBUtils.addSong(anime.getEnglishTitle(), song, EMPTY_SEARCH);
@@ -51,7 +47,7 @@ public class YoutubeUtil {
             DBUtils.addSong(anime.getEnglishTitle(), song, ytid);
         }
         else if (ytid.equals(EMPTY_SEARCH)) {
-            throw new Exception("I couldn't find any results for " + MalSong.asString(song, anime.getEnglishTitle(), anime.getTitle()));
+            throw new Exception("I couldn't find any results for " + song + " from " + anime.getEnglishTitle());
         }
         return new MalSong(song, anime, VIDEO_URL.replace("{id}", ytid), channelId);
     }
@@ -73,7 +69,7 @@ public class YoutubeUtil {
 
     private static boolean containsAny(AnimeObject animeException, String phrase, String[] keywords) {
         for (String keyword : keywords) {
-            if (phrase.contains(keyword) && !animeException.getTitle().toLowerCase().contains(keyword) && !animeException.getEnglishTitle().toLowerCase().contains(keyword)) {
+            if (phrase.contains(keyword) && !animeException.getEnglishTitle().toLowerCase().contains(keyword)) {
                 return true;
             }
         }

@@ -2,22 +2,22 @@ package listener;
 
 import audio.SessionManager;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason;
-import model.mal.AnimeObject;
-import model.mal.MalSong;
-import model.mal.MalUser;
+import model.mal.*;
 import audio.MusicSession;
-import model.YmlConfig;
+import model.config.YmlConfig;
+import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
+import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceUpdateEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.exceptions.PermissionException;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.managers.AudioManager;
-import org.jsoup.nodes.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.HttpClientErrorException;
 import util.*;
 
@@ -83,20 +83,28 @@ public class MalMusicListener extends ListenerAdapter {
                 }
                 else if (messageTokens.length >= 2 && messageTokens[1].equalsIgnoreCase("add")) {
                     if (messageTokens.length > 2) {
-                        StringBuilder message = new StringBuilder();
                         for (int i = 2; i < messageTokens.length; ++i) {
                             String user = messageTokens[i];
                             try {
-                                SessionManager.getInstance().getMusicSession(guild).addUser(user);
-                                message.append("Successfully added " + user + "!\n");
+                                JikanUserResponse jikanUser = SessionManager.getInstance().getMusicSession(guild).addUser(config.getJikan().getUrl(), user);
+
+                                MessageBuilder messageBuilder = new MessageBuilder();
+                                messageBuilder.append("Successfully added!");
+
+                                EmbedBuilder embedBuilder = new EmbedBuilder();
+                                embedBuilder.setTitle(jikanUser.getUsername());
+                                embedBuilder.setThumbnail(jikanUser.getImage());
+                                embedBuilder.setColor(3035554);
+                                embedBuilder.setDescription(String.format("[MyAnimeList Page](%s)", jikanUser.getUrl()));
+
+                                messageBuilder.setEmbed(embedBuilder.build());
+                                sourceChannel.sendMessage(messageBuilder.build()).queue();
                             }
                             catch (Exception e) {
-                                message.append("Failed to add " + user + ": " + e.getMessage() + '\n');
+                                sourceChannel.sendMessage("Failed to add " + user + ": " + e.getMessage()).queue();
                                 e.printStackTrace();
                             }
                         }
-                        message.deleteCharAt(message.length() - 1);
-                        sourceChannel.sendMessage(message.toString()).queue();
                     }
                     else {
                         sourceChannel.sendMessage("...Add who? You're gonna have to give me a MAL username (or more than one)").queue();
@@ -176,20 +184,10 @@ public class MalMusicListener extends ListenerAdapter {
                                 while (selectedAnime == null || selectedAnime.getSongs() == null || selectedAnime.getSongs().isEmpty()) {
                                     selectedAnime = SessionManager.getInstance().getMusicSession(guild).selectAnime(combineMethod, animeTypes);
                                     if (selectedAnime != null && (selectedAnime.getSongs() == null || selectedAnime.getEnglishTitle() == null)) {
-                                        Document malPage = HtmlUtils.getMALPage(config.getMal(), selectedAnime.getMalId());
-                                        if (selectedAnime.getEnglishTitle() == null) {
-                                            selectedAnime.setEnglishTitle(HtmlUtils.getEnglishTitleFromMAL(malPage, selectedAnime.getTitle()));
-                                        }
-                                        if (selectedAnime.getSongs() == null) {
-                                            logger.info("anime name: " + selectedAnime.getEnglishTitle());
-                                            selectedAnime.setSongs(HtmlUtils.getSongsFromMAL(malPage));
-                                            logger.info("post add");
-                                            for (String malSong : selectedAnime.getSongs()) {
-                                                logger.info(malSong);
-                                            }
-                                            if (SessionManager.getInstance().getMusicSession(guild).filterRecent(selectedAnime.getSongs()).isEmpty()) {
-                                                selectedAnime = null;
-                                            }
+                                        ResponseEntity<JikanAnimeResponse> response = JikanUtils.getAnime(config.getJikan().getUrl(), selectedAnime.getMalId(), false);
+                                        selectedAnime.applyJikan(response.getBody());
+                                        if (SessionManager.getInstance().getMusicSession(guild).filterRecent(selectedAnime.getSongs()).isEmpty()) {
+                                            selectedAnime = null;
                                         }
                                     }
                                     else if (selectedAnime == null) {
@@ -204,7 +202,9 @@ public class MalMusicListener extends ListenerAdapter {
                                     SessionManager.getInstance().getMusicSession(guild).setLastCommand(rawMessage);
                                 }
                                 try {
-                                    MalSong song = YoutubeUtil.pickSong(SessionManager.getInstance().getMusicSession(guild), sourceChannel.getIdLong(), config.getYt(), selectedAnime);
+                                    Set<String> filteredSongs = SessionManager.getInstance().getMusicSession(guild).filterRecent(selectedAnime.getSongs());
+                                    String songName = (String) filteredSongs.toArray()[new Random().nextInt(filteredSongs.size())];
+                                    MalSong song = YoutubeUtil.getMalSong(config.getYoutube().getUrl(), config.getYoutube().getToken(), songName, sourceChannel.getIdLong(), selectedAnime);
                                     SessionManager.getInstance().getMusicSession(guild).addToRecent(song.getName());
                                     SessionManager.getInstance().loadAndPlay(guild, sourceChannel, song.getUrl());
                                     logger.info("Now Playing: " + song.getUrl());
@@ -252,7 +252,7 @@ public class MalMusicListener extends ListenerAdapter {
                     }
                 }
                 else if (messageTokens.length >= 5 && messageTokens[1].equalsIgnoreCase("fix")) {
-                    if (config.getFixers().contains(member.getId())) {
+                    if (config.getDiscord().getFixers().contains(member.getId())) {
                         try {
                             DBUtils.fixSongId(messageTokens[2], messageTokens[3], messageTokens[4]);
                             sourceChannel.sendMessage("Done! The song should be fixed now!").queue();
@@ -287,7 +287,30 @@ public class MalMusicListener extends ListenerAdapter {
         MusicSession musicSession = SessionManager.getInstance().getMusicSession(guild);
         MalSong lastSong = musicSession.getCurrentSong();
         String usersWithSong = commaJoin(musicSession.getMalUsers().stream().filter((user) -> user.getAnimeList().contains(lastSong.getAnime())).map(MalUser::getUsername).collect(Collectors.toList()));
-        guild.getTextChannelById(lastSong.getPlayedFromMessageChannelId()).sendMessage(MessageUtils.getSongEndMessage(endReason) + " The song was " + lastSong.toString() + (Arrays.asList(6547L, 9062L, 10067L).contains(lastSong.getAnime().getMalId()) ? "! That was a really good one \u2764\uFE0F\n" : " in case you were wondering\n") + lastSong.getUrl() + "\n" + usersWithSong + " should've known that one.").queue();
+
+        MessageBuilder messageBuilder = new MessageBuilder();
+        messageBuilder.append(MessageUtils.getSongEndMessage(endReason));
+        messageBuilder.append((Arrays.asList(6547L, 9062L, 10067L).contains(lastSong.getAnime().getMalId()) ? " That was one of my favorites \u2764\uFE0F\n" : " The song was..."));
+
+        EmbedBuilder embedBuilder = new EmbedBuilder();
+        embedBuilder.setColor(15017372);
+        embedBuilder.setTitle(lastSong.getName());
+        embedBuilder.setDescription(String.format("[YouTube](%s)", lastSong.getUrl()));
+        embedBuilder.setThumbnail(lastSong.getAnime().getImage());
+
+        StringBuilder animeInfo = new StringBuilder();
+        for (String otherTitle : lastSong.getAnime().getOtherTitles()) {
+            animeInfo.append(otherTitle);
+            animeInfo.append('\n');
+        }
+        animeInfo.append(String.format("\n[MyAnimeList Page](%s)", lastSong.getAnime().getUrl()));
+        embedBuilder.addField(lastSong.getAnime().getEnglishTitle(), animeInfo.toString(), false);
+
+        embedBuilder.setFooter(usersWithSong + " should've known that one");
+
+        messageBuilder.setEmbed(embedBuilder.build());
+
+        guild.getTextChannelById(lastSong.getPlayedFromMessageChannelId()).sendMessage(messageBuilder.build()).queue();
         musicSession.setCurrentSong(null);
     }
 
