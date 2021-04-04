@@ -51,7 +51,7 @@ public class MusicSession {
 
     public JikanUserResponse addUser(String url, String username) throws Exception { // TODO: update mal user to store user info and display completed/watching count in success message
         ResponseEntity<JikanUserResponse> response = JikanUtils.getUser(url, username, true);
-        MalUser newUser = new MalUser(response.getBody().getUsername());
+        MalUser newUser = new MalUser(response.getBody());
         if (malUsers.contains(newUser)) {
             throw new Exception(username + " is already added to this session!");
         }
@@ -72,8 +72,8 @@ public class MusicSession {
         }
     }
 
-    public boolean removeUser(String username) {
-        return malUsers.remove(new MalUser(username));
+    public boolean removeUser(String user) {
+        return malUsers.remove(new MalUser(user));
     }
 
     public AnimeObject selectAnime(CombineMethod combineMethod, Collection<AnimeType> animeTypes) {

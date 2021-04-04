@@ -13,14 +13,24 @@ public class MalUser implements Comparable<MalUser> {
 
     private static final Logger logger = LoggerFactory.getLogger(MalUser.class);
 
+    private static final long MAX_SHOW_RESPONSE_COUNT = 300;
+
     private static final Map<Long, AnimeObject> animeLibrary = new HashMap<>();
 
     private String username;
     private Set<AnimeObject> animeList;
+    private Map<String, Long> showCounts;
 
-    public MalUser(String username) {
-        this.username = username;
+    public MalUser(String user) {
+        this.username = user;
         animeList = new HashSet<>();
+        showCounts = new HashMap<>();
+    }
+
+    public MalUser(JikanUserResponse response) {
+        this.username = response.getUsername();
+        animeList = new HashSet<>();
+        showCounts = Map.of("completed", response.getAnimeStats().getCompleted(), "watching", response.getAnimeStats().getWatching());
     }
 
     public String getUsername() {
@@ -29,10 +39,9 @@ public class MalUser implements Comparable<MalUser> {
 
     public void populate(String jikanUrl) {
         logger.info("populating " + username + "'s list");
-        for (String status : Arrays.asList("watching", "completed")) {
-            int page = 1;
+        for (String status : Arrays.asList("completed", "watching")) {
             List<AnimeObject> responseAnime;
-            do {
+            for (int page = 1; page <= (showCounts.get(status) / MAX_SHOW_RESPONSE_COUNT) + 1; ++page) {
                 logger.info("trying page " + page);
                 ResponseEntity<JikanListResponse> response = JikanUtils.getList(jikanUrl, username, status, page, true);
                 responseAnime = response.getBody().getAnime();
@@ -42,9 +51,7 @@ public class MalUser implements Comparable<MalUser> {
                     }
                     animeList.add(animeLibrary.get(animeObject.getMalId()));
                 }
-                ++page;
-            } while (!responseAnime.isEmpty());
-            logger.info("page " + (page - 1) + " was empty");
+            }
         }
     }
 
