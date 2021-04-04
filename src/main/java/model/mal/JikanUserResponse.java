@@ -11,6 +11,9 @@ public class JikanUserResponse {
     @JsonAlias("image_url")
     private String image;
 
+    @JsonAlias("anime_stats")
+    private AnimeStats animeStats;
+
     public String getUsername() {
         return username;
     }
@@ -33,5 +36,13 @@ public class JikanUserResponse {
 
     public void setImage(String image) {
         this.image = image;
+    }
+
+    public AnimeStats getAnimeStats() {
+        return animeStats;
+    }
+
+    public void setAnimeStats(AnimeStats animeStats) {
+        this.animeStats = animeStats;
     }
 }

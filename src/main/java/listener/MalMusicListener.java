@@ -83,13 +83,14 @@ public class MalMusicListener extends ListenerAdapter {
                 }
                 else if (messageTokens.length >= 2 && messageTokens[1].equalsIgnoreCase("add")) {
                     if (messageTokens.length > 2) {
+                        sourceChannel.sendMessage("Attempting to add users. This could take a while...").queue();
                         for (int i = 2; i < messageTokens.length; ++i) {
                             String user = messageTokens[i];
                             try {
                                 JikanUserResponse jikanUser = SessionManager.getInstance().getMusicSession(guild).addUser(config.getJikan().getUrl(), user);
 
                                 MessageBuilder messageBuilder = new MessageBuilder();
-                                messageBuilder.append("Successfully added!");
+                                messageBuilder.append("Successfully added!" + (i < messageTokens.length - 1 ? " Now for the next user..." : " Done!"));
 
                                 EmbedBuilder embedBuilder = new EmbedBuilder();
                                 embedBuilder.setTitle(jikanUser.getUsername());
@@ -97,11 +98,14 @@ public class MalMusicListener extends ListenerAdapter {
                                 embedBuilder.setColor(3035554);
                                 embedBuilder.setDescription(String.format("[MyAnimeList Page](%s)", jikanUser.getUrl()));
 
+                                embedBuilder.addField("Completed", jikanUser.getAnimeStats().getCompleted() + "", true);
+                                embedBuilder.addField("Watching", jikanUser.getAnimeStats().getWatching() + "", true);
+
                                 messageBuilder.setEmbed(embedBuilder.build());
                                 sourceChannel.sendMessage(messageBuilder.build()).queue();
                             }
                             catch (Exception e) {
-                                sourceChannel.sendMessage("Failed to add " + user + ": " + e.getMessage()).queue();
+                                sourceChannel.sendMessage("Failed to add " + user + ": " + e.getMessage() + "." + (i < messageTokens.length - 1 ? " Now for the next user..." : " Done!")).queue();
                                 e.printStackTrace();
                             }
                         }
