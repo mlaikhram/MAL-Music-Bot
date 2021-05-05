@@ -8,7 +8,9 @@ import model.mal.JikanUserResponse;
 import model.mal.MalSong;
 import model.mal.MalUser;
 import model.config.YmlConfig;
+import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.audio.AudioSendHandler;
+import net.dv8tion.jda.api.entities.Message;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +22,7 @@ import util.JikanUtils;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
 
 public class MusicSession {
 
@@ -49,25 +52,27 @@ public class MusicSession {
         this.audioSendHandler = new AudioPlayerSendHandler(this.audioPlayer);
     }
 
-    public JikanUserResponse addUser(String url, String username) throws Exception { // TODO: update mal user to store user info and display completed/watching count in success message
+    public JikanUserResponse addUser(String url, Message message, EmbedBuilder embedBuilder, String username) throws Exception {
         ResponseEntity<JikanUserResponse> response = JikanUtils.getUser(url, username, true);
         MalUser newUser = new MalUser(response.getBody());
+        embedBuilder.setTitle(response.getBody().getUsername());
+        embedBuilder.setThumbnail(response.getBody().getImage());
         if (malUsers.contains(newUser)) {
-            throw new Exception(username + " is already added to this session!");
+            throw new Exception("This user is already added!");
         }
         else {
             try {
                 malUsers.add(newUser);
-                newUser.populate(config.getJikan().getUrl());
+                newUser.populate(config.getJikan().getUrl(), message, embedBuilder);
                 return response.getBody();
             }
             catch (HttpServerErrorException e) {
                 malUsers.remove(newUser);
-                throw new Exception("Could not add " + username + ": " + e.getMessage() + (e.getStatusCode().value() / 100 == 5 ? ". MAL might be having server issues" : ""), e);
+                throw new Exception("Could not add user: " + e.getMessage() + (e.getStatusCode().value() / 100 == 5 ? ". MAL might be having server issues" : ""), e);
             }
             catch (Exception e) {
                 malUsers.remove(newUser);
-                throw new Exception("could not add " + username + ": " + e.getMessage(), e);
+                throw new Exception("could not add user: " + e.getMessage(), e);
             }
         }
     }

@@ -86,28 +86,31 @@ public class MalMusicListener extends ListenerAdapter {
                         sourceChannel.sendMessage("Attempting to add users. This could take a while...").queue();
                         for (int i = 2; i < messageTokens.length; ++i) {
                             String user = messageTokens[i];
-                            try {
-                                JikanUserResponse jikanUser = SessionManager.getInstance().getMusicSession(guild).addUser(config.getJikan().getUrl(), user);
+                            EmbedBuilder embedBuilder = new EmbedBuilder();
+                            embedBuilder.setTitle(user);
+                            embedBuilder.setColor(15779389);
+                            embedBuilder.setDescription("Searching for user...");
+                            sourceChannel.sendMessage(embedBuilder.build()).queue((message) -> {
+                                try {
+                                    JikanUserResponse jikanUser = SessionManager.getInstance().getMusicSession(guild).addUser(config.getJikan().getUrl(), message, embedBuilder, user);
 
-                                MessageBuilder messageBuilder = new MessageBuilder();
-                                messageBuilder.append("Successfully added!" + (i < messageTokens.length - 1 ? " Now for the next user..." : " Done!"));
+                                    embedBuilder.setTitle(jikanUser.getUsername());
+                                    embedBuilder.setDescription(String.format("[MyAnimeList Page](%s)", jikanUser.getUrl()));
+                                    embedBuilder.setColor(3035554);
+                                    embedBuilder.setThumbnail(jikanUser.getImage());
 
-                                EmbedBuilder embedBuilder = new EmbedBuilder();
-                                embedBuilder.setTitle(jikanUser.getUsername());
-                                embedBuilder.setThumbnail(jikanUser.getImage());
-                                embedBuilder.setColor(3035554);
-                                embedBuilder.setDescription(String.format("[MyAnimeList Page](%s)", jikanUser.getUrl()));
+                                    embedBuilder.addField("Completed", jikanUser.getAnimeStats().getCompleted() + "", true);
+                                    embedBuilder.addField("Watching", jikanUser.getAnimeStats().getWatching() + "", true);
 
-                                embedBuilder.addField("Completed", jikanUser.getAnimeStats().getCompleted() + "", true);
-                                embedBuilder.addField("Watching", jikanUser.getAnimeStats().getWatching() + "", true);
-
-                                messageBuilder.setEmbed(embedBuilder.build());
-                                sourceChannel.sendMessage(messageBuilder.build()).queue();
-                            }
-                            catch (Exception e) {
-                                sourceChannel.sendMessage("Failed to add " + user + ": " + e.getMessage() + "." + (i < messageTokens.length - 1 ? " Now for the next user..." : " Done!")).queue();
-                                e.printStackTrace();
-                            }
+                                    message.editMessage(embedBuilder.build()).queue();
+                                }
+                                catch (Exception e) {
+                                    embedBuilder.setDescription(e.getMessage());
+                                    embedBuilder.setColor(10628913);
+                                    message.editMessage(embedBuilder.build()).queue();
+                                    e.printStackTrace();
+                                }
+                            });
                         }
                     }
                     else {

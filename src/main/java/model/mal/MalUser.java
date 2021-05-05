@@ -1,10 +1,11 @@
 package model.mal;
 
+import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.entities.Message;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.client.RestTemplate;
 import util.JikanUtils;
 
 import java.util.*;
@@ -37,8 +38,11 @@ public class MalUser implements Comparable<MalUser> {
         return username;
     }
 
-    public void populate(String jikanUrl) {
+    public void populate(String jikanUrl, Message message, EmbedBuilder embedBuilder) {
         logger.info("populating " + username + "'s list");
+        Long totalShowCount = showCounts.values().stream().reduce(0L, Long::sum);
+        embedBuilder.setDescription(String.format("Collecting shows... (%d/%d)", 0, totalShowCount));
+        message.editMessage(embedBuilder.build()).queue();
         for (String status : Arrays.asList("completed", "watching")) {
             List<AnimeObject> responseAnime;
             for (int page = 1; page <= (showCounts.get(status) / MAX_SHOW_RESPONSE_COUNT) + 1; ++page) {
@@ -51,6 +55,8 @@ public class MalUser implements Comparable<MalUser> {
                     }
                     animeList.add(animeLibrary.get(animeObject.getMalId()));
                 }
+                embedBuilder.setDescription(String.format("Collecting shows... (%d/%d)", animeList.size(), totalShowCount));
+                message.editMessage(embedBuilder.build()).queue();
             }
         }
     }
