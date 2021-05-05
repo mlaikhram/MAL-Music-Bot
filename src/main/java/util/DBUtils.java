@@ -42,6 +42,15 @@ public class DBUtils {
         }
     }
 
+    public static void deleteSong(String animeName, String songName) throws Exception {
+        try (Connection connection = DriverManager.getConnection(connectionString)) {
+            PreparedStatement statement = connection.prepareStatement("DELETE FROM songs WHERE anime_name=? AND name=?");
+            statement.setString(1, animeName);
+            statement.setString(2, songName);
+            statement.execute();
+        }
+    }
+
     public static void fixSongId(String animeName, String songName, String newId) throws Exception {
         if (getSongId(animeName, songName) != null) {
             try (Connection connection = DriverManager.getConnection(connectionString)) {

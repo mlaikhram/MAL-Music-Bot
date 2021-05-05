@@ -208,11 +208,7 @@ public class MalMusicListener extends ListenerAdapter {
                                 try {
                                     Set<String> filteredSongs = SessionManager.getInstance().getMusicSession(guild).filterRecent(selectedAnime.getSongs());
                                     String songName = (String) filteredSongs.toArray()[new Random().nextInt(filteredSongs.size())];
-                                    MalSong song = YoutubeUtil.getMalSong(config.getYoutube().getUrl(), config.getYoutube().getToken(), songName, sourceChannel.getIdLong(), selectedAnime);
-                                    SessionManager.getInstance().getMusicSession(guild).addToRecent(song.getName());
-                                    SessionManager.getInstance().loadAndPlay(guild, sourceChannel, song.getUrl());
-                                    logger.info("Now Playing: " + song.getUrl());
-                                    SessionManager.getInstance().getMusicSession(guild).setCurrentSong(song);
+                                    lookupAndPlaySong(guild.getIdLong(), sourceChannel.getIdLong(), selectedAnime, songName);
                                 }
                                 catch (HttpClientErrorException e) {
                                     if (e.getStatusCode() == HttpStatus.FORBIDDEN) {
@@ -316,6 +312,20 @@ public class MalMusicListener extends ListenerAdapter {
 
         guild.getTextChannelById(lastSong.getPlayedFromMessageChannelId()).sendMessage(messageBuilder.build()).queue();
         musicSession.setCurrentSong(null);
+    }
+
+    private void lookupAndPlaySong(long guildId, long sourceChannelId, AnimeObject selectedAnime, String songName) {
+        Guild guild = jda.getGuildById(guildId);
+        MessageChannel sourceChannel = jda.getTextChannelById(sourceChannelId);
+        try {
+            MalSong song = YoutubeUtil.getMalSong(config.getYoutube().getUrl(), config.getYoutube().getToken(), songName, sourceChannel.getIdLong(), selectedAnime);
+            SessionManager.getInstance().getMusicSession(guild).addToRecent(song.getName());
+            SessionManager.getInstance().loadAndPlay(guild, sourceChannel, song, (retrySongName) -> lookupAndPlaySong(guildId, sourceChannelId, selectedAnime, retrySongName));
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            sourceChannel.sendMessage("What's wrong with my music player? Oh, " + e.getMessage()).queue();
+        }
     }
 
     private String commaJoin(List<String> items) {

@@ -9,14 +9,22 @@ import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import listener.MalMusicListener;
 import model.config.YmlConfig;
+import model.mal.MalSong;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.MessageChannel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import util.DBUtils;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Consumer;
+
 
 public class SessionManager {
     private static SessionManager INSTANCE;
+
+    private static final Logger logger = LoggerFactory.getLogger(SessionManager.class);
 
     private MalMusicListener listener;
     private YmlConfig config;
@@ -46,13 +54,15 @@ public class SessionManager {
         });
     }
 
-    public void loadAndPlay(Guild guild, MessageChannel channel, String trackUrl) {
+    public void loadAndPlay(Guild guild, MessageChannel channel, final MalSong song, Consumer<String> onSongFailed) {
         final MusicSession musicSession = this.getMusicSession(guild);
 
-        this.audioPlayerManager.loadItemOrdered(musicSession, trackUrl, new AudioLoadResultHandler() {
+        this.audioPlayerManager.loadItemOrdered(musicSession, song.getUrl(), new AudioLoadResultHandler() {
             @Override
             public void trackLoaded(AudioTrack track) {
                 musicSession.scheduler.queue(track);
+                musicSession.setCurrentSong(song);
+                logger.info("now playing: " + song.getUrl());
                 channel.sendMessage("Try this one!").queue();
             }
 
@@ -63,12 +73,32 @@ public class SessionManager {
 
             @Override
             public void noMatches() {
-                //
+                logger.info("song doesn't exist anymore: " + song.getUrl());
+                try {
+                    DBUtils.deleteSong(song.getAnime().getEnglishTitle(), song.getName());
+                    onSongFailed.accept(song.getName());
+                }
+                catch (Exception e) {
+                    channel.sendMessage("Something's not right... " + e.getMessage()).queue();
+                }
             }
 
             @Override
             public void loadFailed(FriendlyException exception) {
-                //
+                exception.printStackTrace();
+                if (exception.severity == FriendlyException.Severity.COMMON) {
+                    logger.info("Song is private or copyright claimed: " + song.getUrl());
+                    try {
+                        DBUtils.deleteSong(song.getAnime().getEnglishTitle(), song.getName());
+                        onSongFailed.accept(song.getName());
+                    }
+                    catch (Exception e) {
+                        channel.sendMessage("Something's not right... " + e.getMessage()).queue();
+                    }
+                }
+                else {
+                    channel.sendMessage("Something's not right... " + exception.getMessage()).queue();
+                }
             }
         });
     }

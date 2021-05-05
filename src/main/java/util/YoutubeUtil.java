@@ -41,7 +41,7 @@ public class YoutubeUtil {
             YoutubeVideo video = filterResults(anime, response.getBody().getVideos());
             if (video == null) {
                 DBUtils.addSong(anime.getEnglishTitle(), song, EMPTY_SEARCH);
-                throw new Exception("I couldn't find any songs for " + anime.getEnglishTitle());
+                throw new Exception("I couldn't find any videos for " + query);
             }
             ytid = video.getId().getVideoId();
             DBUtils.addSong(anime.getEnglishTitle(), song, ytid);
