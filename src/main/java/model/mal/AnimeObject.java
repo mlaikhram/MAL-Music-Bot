@@ -105,7 +105,7 @@ public class AnimeObject implements Comparable<AnimeObject> {
         }
 
         this.songs = new HashSet<>();
-        Pattern regexWithEpisodes = Pattern.compile("(#[0-9]+: )?\"(.+?)( \\(.+\\))?\" by .+( \\(ep[s]? ([0-9]+(\\-[0-9]+)?(, )?)+\\))?"); // excludes japanese song name and artist name to (hopefully) refine search
+        Pattern regexWithEpisodes = Pattern.compile("(#?[0-9]+: ?)?\"?(.+?)( \\(.+\\))?\"? by .+( \\(ep[s]? ([0-9]+(\\-[0-9]+)?(, )?)+\\))?"); // excludes japanese song name and artist name to (hopefully) refine search
         logger.info("songs:");
         for (String song : jikan.getOpeningSongs()) {
             logger.info(song);
