@@ -111,7 +111,7 @@ public class AnimeObject implements Comparable<AnimeObject> {
             logger.info(song);
             Matcher matcher = regexWithEpisodes.matcher(song);
             if (matcher.matches()) {
-                this.songs.add(matcher.group(2).replace("\"", ""));
+                this.songs.add(matcher.group(2).replace("\"", "").strip());
             }
         }
         for (String song : jikan.getEndingSongs()) {
