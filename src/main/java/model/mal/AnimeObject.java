@@ -105,20 +105,20 @@ public class AnimeObject implements Comparable<AnimeObject> {
         }
 
         this.songs = new HashSet<>();
-        Pattern regexWithEpisodes = Pattern.compile("(#?[0-9]+: ?)?\"?(.+?)( \\(.+\\))?\"? by .+( \\(ep[s]? ([0-9]+(\\-[0-9]+)?(, )?)+\\))?"); // excludes japanese song name and artist name to (hopefully) refine search
+        Pattern regexWithEpisodes = Pattern.compile("(#?[0-9]+: ?)?\"?(.+?)( \\(.+\\))?\"? ?by ?.+( \\(ep[s]? ([0-9]+(\\-[0-9]+)?(, )?)+\\))?"); // excludes japanese song name and artist name to (hopefully) refine search
         logger.info("songs:");
         for (String song : jikan.getOpeningSongs()) {
             logger.info(song);
             Matcher matcher = regexWithEpisodes.matcher(song);
             if (matcher.matches()) {
-                this.songs.add(matcher.group(2).replace("\"", "").strip());
+                this.songs.add(matcher.group(2).replace("\"", "").replaceAll("(^\\h*)|(\\h*$)","").strip());
             }
         }
         for (String song : jikan.getEndingSongs()) {
             logger.info(song);
             Matcher matcher = regexWithEpisodes.matcher(song);
             if (matcher.matches()) {
-                this.songs.add(matcher.group(2).replace("\"", ""));
+                this.songs.add(matcher.group(2).replace("\"", "").replaceAll("(^\\h*)|(\\h*$)","").strip());
             }
         }
         logger.info("post add:");
